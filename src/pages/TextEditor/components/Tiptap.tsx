@@ -339,7 +339,7 @@ function MenuBar({ editor }: any) {
                     item.disable ? 'cursor-not-allowed' : 'cursor-pointer'
                   }`}
                 >
-                  {item.icon}
+                  <item.icon />
                 </button>
               </MenubarTrigger>
               <MenubarContent>
@@ -360,7 +360,7 @@ function MenuBar({ editor }: any) {
               item.disable ? 'cursor-not-allowed' : 'cursor-pointer'
             } + ${item.isActive ? item.isActive : ''}`}
           >
-            {item.icon}
+            <item.icon />
           </button>
         )
       )}

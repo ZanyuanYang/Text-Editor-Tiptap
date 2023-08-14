@@ -1,6 +1,6 @@
 # Tiptap Text Editor
 
-A text editor built with [Tiptap](https://tiptap.dev/) for React.
+A text editor built with [Tiptap](https://tiptap.dev/) and [TailwindCSS](https://tailwindcss.com/) for React.
 
 ![img.png](src/assets/img.png)
 
