@@ -325,7 +325,14 @@ function MenuBar({ editor }: any) {
   const [open, setOpen] = useState<boolean>(true);
 
   return (
-    <div className="flex gap-2 bg-black p-2 text-white w-full">
+    <div className="flex items-center gap-2 bg-black p-2 text-white w-full">
+      <input
+        type="color"
+        onInput={(event: any) =>
+          editor.chain().focus().setColor(event.target.value).run()
+        }
+        value={editor.getAttributes('textStyle').color}
+      />
       {MenuBarIconValue.map((item) =>
         item.hover ? (
           <Menubar className="bg-transparent border-none" key={item.id}>
