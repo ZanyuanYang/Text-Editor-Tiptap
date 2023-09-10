@@ -1,5 +1,8 @@
 import './styles.scss';
 
+import juice from 'juice';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Color } from '@tiptap/extension-color';
 import ListItem from '@tiptap/extension-list-item';
 import TextStyle from '@tiptap/extension-text-style';
@@ -426,20 +429,27 @@ function Tiptap(props: TiptapProps) {
   });
 
   useEffect(() => {
-    if (editor) {
+    if (editor && editorText) {
       editor
         .chain()
         .focus()
-        .insertContent(`<br />`)
         .insertContent(editorText)
+        .insertContent(`<br />`)
         .run();
     }
   }, [editorText, editor]);
 
+  useEffect(() => {
+    editor?.chain().focus().insertContent(content).run();
+  }, [content, editor]);
+
   return (
     <div className="w-full border-black border-4 rounded-2xl">
       <MenuBar editor={editor} />
-      <EditorContent className="w-full p-3" editor={editor} />
+      <EditorContent
+        className="w-full p-3 max-h-[600px] overflow-auto"
+        editor={editor}
+      />
     </div>
   );
 }

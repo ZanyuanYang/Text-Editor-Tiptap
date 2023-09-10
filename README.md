@@ -13,8 +13,9 @@ npm run dev
 ```
 Visit http://localhost:5173/ in your browser.
 
-# Feature
+# Features
 
+- Upload .docx 
 - Heading
 - Bold
 - Italic
@@ -28,6 +29,7 @@ Visit http://localhost:5173/ in your browser.
 - Alignment(Left, Center, Right, Justify)
 - Table
 - Color
+
 
 
 ## 📄 License
