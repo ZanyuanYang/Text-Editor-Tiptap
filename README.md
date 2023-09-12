@@ -4,6 +4,8 @@ A text editor built with [Tiptap](https://tiptap.dev/) and [TailwindCSS](https:/
 
 ![img.png](src/assets/img.png)
 
+## 🧑🏻‍💻 Demo
+[text-editor-tiptap.vercel.app](https://text-editor-tiptap.vercel.app/)
 
 ## 🚀 Installation
 Open a terminal and run:
@@ -13,7 +15,7 @@ npm run dev
 ```
 Visit http://localhost:5173/ in your browser.
 
-# Features
+## ⛑️ Features
 
 - Upload .docx 
 - Heading
