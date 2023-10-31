@@ -1,8 +1,5 @@
 import './styles.scss';
-
-import juice from 'juice';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import React, { useEffect, useRef, useState } from 'react';
 import { Color } from '@tiptap/extension-color';
 import ListItem from '@tiptap/extension-list-item';
 import TextStyle from '@tiptap/extension-text-style';
@@ -15,11 +12,12 @@ import Document from '@tiptap/extension-document';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import Paragraph from '@tiptap/extension-paragraph';
 import Text from '@tiptap/extension-text';
+import Image from '@tiptap/extension-image';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import React, { useEffect, useState } from 'react';
+
 import { Icons } from '@/components/icons';
 import {
   Menubar,
@@ -320,15 +318,34 @@ const MenuBarIcon = ({ editor }: any) => [
   },
 ];
 
-function MenuBar({ editor }: any) {
+function MenuBar({ editor, setImageURL }: any) {
+  const [open, setOpen] = useState<boolean>(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   if (!editor) {
     return null;
   }
   const MenuBarIconValue = MenuBarIcon({ editor });
-  const [open, setOpen] = useState<boolean>(true);
+
+  const handleImageChange = (e: any) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setImageURL(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleIconClick = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
-    <div className="flex items-center gap-2 bg-black p-2 text-white w-full">
+    <div className="flex items-center gap-1 bg-black p-2 text-white w-full">
       <input
         type="color"
         onInput={(event: any) =>
@@ -367,13 +384,24 @@ function MenuBar({ editor }: any) {
             onClick={item.onClick}
             disabled={item.disable}
             className={`${
-              item.disable ? 'cursor-not-allowed' : 'cursor-pointer'
+              item.disable
+                ? 'cursor-not-allowed'
+                : 'cursor-pointer hover:bg-gray-500 hover:rounded-lg p-1'
             } + ${item.isActive ? item.isActive : ''}`}
           >
             <item.icon />
           </button>
         )
       )}
+      <div className="cursor-pointer hover:bg-gray-500 hover:rounded-lg p-1">
+        <input
+          type="file"
+          onChange={handleImageChange}
+          ref={fileInputRef}
+          className="hidden"
+        />
+        <Icons.image onClick={handleIconClick} />
+      </div>
     </div>
   );
 }
@@ -403,6 +431,10 @@ function Tiptap(props: TiptapProps) {
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
       Underline.configure({
         HTMLAttributes: {
           class: 'my-custom-class',
@@ -427,6 +459,15 @@ function Tiptap(props: TiptapProps) {
     },
     content,
   });
+  const [imageURL, setImageURL] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (editor && imageURL) {
+      editor.commands.setImage({
+        src: imageURL,
+      });
+    }
+  }, [imageURL]);
 
   useEffect(() => {
     if (editor && editorText) {
@@ -445,7 +486,7 @@ function Tiptap(props: TiptapProps) {
 
   return (
     <div className="w-full border-black border-4 rounded-2xl">
-      <MenuBar editor={editor} />
+      <MenuBar editor={editor} setImageURL={setImageURL} />
       <EditorContent
         className="w-full p-3 max-h-[600px] overflow-auto"
         editor={editor}

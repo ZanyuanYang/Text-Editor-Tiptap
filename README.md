@@ -31,6 +31,7 @@ Visit http://localhost:5173/ in your browser.
 - Alignment(Left, Center, Right, Justify)
 - Table
 - Color
+- Image(This extension does only the rendering of images.)
 
 
 
