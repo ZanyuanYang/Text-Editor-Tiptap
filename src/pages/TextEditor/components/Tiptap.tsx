@@ -1,6 +1,7 @@
 import './styles.scss';
 import React, { useEffect, useRef, useState } from 'react';
 import { Color } from '@tiptap/extension-color';
+import History from '@tiptap/extension-history';
 import ListItem from '@tiptap/extension-list-item';
 import TextStyle from '@tiptap/extension-text-style';
 import Table from '@tiptap/extension-table';
@@ -114,6 +115,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: !editor.can().chain().focus().toggleBold().run(),
     isActive: editor.isActive('bold') ? 'is-active text-green-700' : '',
     hover: false,
+    split: false,
   },
   {
     id: 2,
@@ -123,6 +125,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: !editor.can().chain().focus().toggleItalic().run(),
     isActive: editor.isActive('italic') ? 'is-active text-green-700' : '',
     hover: false,
+    split: false,
   },
   {
     id: 21,
@@ -132,6 +135,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: false,
     isActive: editor.isActive('underline') ? 'is-active text-green-700' : '',
     hover: false,
+    split: false,
   },
   {
     id: 3,
@@ -141,6 +145,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: !editor.can().chain().focus().toggleStrike().run(),
     isActive: editor.isActive('strike') ? 'is-active text-green-700' : '',
     hover: false,
+    split: false,
   },
   {
     id: 4,
@@ -150,6 +155,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: !editor.can().chain().focus().toggleCode().run(),
     isActive: editor.isActive('code') ? 'is-active text-green-700' : '',
     hover: false,
+    split: true,
   },
   {
     id: 5,
@@ -161,6 +167,7 @@ const MenuBarIcon = ({ editor }: any) => [
       ? 'is-active text-green-700'
       : '',
     hover: false,
+    split: false,
   },
   {
     id: 6,
@@ -172,6 +179,7 @@ const MenuBarIcon = ({ editor }: any) => [
       ? 'is-active text-green-700'
       : '',
     hover: false,
+    split: false,
   },
   {
     id: 13,
@@ -183,6 +191,7 @@ const MenuBarIcon = ({ editor }: any) => [
       ? 'is-active text-green-700'
       : '',
     hover: false,
+    split: false,
   },
   {
     id: 14,
@@ -194,6 +203,7 @@ const MenuBarIcon = ({ editor }: any) => [
       ? 'is-active text-green-700'
       : '',
     hover: false,
+    split: false,
   },
   {
     id: 15,
@@ -205,6 +215,7 @@ const MenuBarIcon = ({ editor }: any) => [
       ? 'is-active text-green-700'
       : '',
     hover: false,
+    split: false,
   },
   {
     id: 7,
@@ -214,6 +225,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: false,
     isActive: editor.isActive('paragraph') ? 'is-active text-green-700' : '',
     hover: false,
+    split: true,
   },
   {
     id: 8,
@@ -225,6 +237,7 @@ const MenuBarIcon = ({ editor }: any) => [
       ? 'is-active text-green-700 list-disc'
       : '',
     hover: false,
+    split: false,
   },
   {
     id: 9,
@@ -236,15 +249,7 @@ const MenuBarIcon = ({ editor }: any) => [
       ? 'is-active text-green-700 list-decimal'
       : '',
     hover: false,
-  },
-  {
-    id: 20,
-    name: 'highlight',
-    icon: Icons.bg,
-    onClick: () => editor.chain().focus().toggleHighlight().run(),
-    disable: false,
-    isActive: editor.isActive('highlight') ? 'is-active text-green-700' : '',
-    hover: false,
+    split: false,
   },
   {
     id: 16,
@@ -254,6 +259,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: false,
     isActive: editor.isActive({ textAlign: 'left' }) ? 'is-active' : '',
     hover: false,
+    split: false,
   },
   {
     id: 17,
@@ -265,6 +271,7 @@ const MenuBarIcon = ({ editor }: any) => [
       ? 'is-active text-green-700 text-center'
       : '',
     hover: false,
+    split: false,
   },
   {
     id: 18,
@@ -274,6 +281,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: false,
     isActive: editor.isActive({ textAlign: 'right' }) ? 'is-active' : '',
     hover: false,
+    split: false,
   },
   {
     id: 19,
@@ -283,6 +291,17 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: false,
     isActive: editor.isActive({ textAlign: 'justify' }) ? 'is-active' : '',
     hover: false,
+    split: true,
+  },
+  {
+    id: 20,
+    name: 'highlight',
+    icon: Icons.bg,
+    onClick: () => editor.chain().focus().toggleHighlight().run(),
+    disable: false,
+    isActive: editor.isActive('highlight') ? 'is-active text-green-700' : '',
+    hover: false,
+    split: false,
   },
   {
     id: 10,
@@ -292,6 +311,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: false,
     isActive: editor.isActive('codeBlock') ? 'is-active text-green-700' : '',
     hover: false,
+    split: false,
   },
   {
     id: 11,
@@ -301,6 +321,7 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: false,
     isActive: editor.isActive('blockquote') ? 'is-active text-green-700' : '',
     hover: false,
+    split: false,
   },
   {
     id: 12,
@@ -315,6 +336,27 @@ const MenuBarIcon = ({ editor }: any) => [
     disable: false,
     isActive: editor.isActive('table') ? 'is-active text-green-700' : '',
     hover: true,
+    split: true,
+  },
+  {
+    id: 30,
+    name: 'undo',
+    icon: Icons.undo,
+    onClick: () => editor.chain().focus().undo().run(),
+    disable: !editor.can().undo(),
+    isActive: editor.isActive('table') ? 'is-active text-green-700' : '',
+    hover: false,
+    split: false,
+  },
+  {
+    id: 31,
+    name: 'redo',
+    icon: Icons.redo,
+    onClick: () => editor.chain().focus().redo().run(),
+    disable: !editor.can().redo(),
+    isActive: editor.isActive('table') ? 'is-active text-green-700' : '',
+    hover: false,
+    split: true,
   },
 ];
 
@@ -357,7 +399,7 @@ function MenuBar({ editor, setImageURL }: any) {
         item.hover ? (
           <Menubar className="bg-transparent border-none" key={item.id}>
             <MenubarMenu>
-              <MenubarTrigger className="p-0">
+              <MenubarTrigger className="mr-1 p-0">
                 <button
                   key={item.id}
                   // onClick={item.onClick}
@@ -369,6 +411,9 @@ function MenuBar({ editor, setImageURL }: any) {
                   <item.icon />
                 </button>
               </MenubarTrigger>
+              {item.split && (
+                <div className="mx-1 w-[1px] flex bg-gray-500 h-6" />
+              )}
               <MenubarContent>
                 {TableMenu({ editor }).map((menuItem) => (
                   <MenubarItem key={menuItem.id} onClick={menuItem.action}>
@@ -379,18 +424,23 @@ function MenuBar({ editor, setImageURL }: any) {
             </MenubarMenu>
           </Menubar>
         ) : (
-          <button
-            key={item.id}
-            onClick={item.onClick}
-            disabled={item.disable}
-            className={`${
-              item.disable
-                ? 'cursor-not-allowed'
-                : 'cursor-pointer hover:bg-gray-500 hover:rounded-lg p-1'
-            } + ${item.isActive ? item.isActive : ''}`}
-          >
-            <item.icon />
-          </button>
+          <div className="flex items-center h-full gap-1">
+            <button
+              key={item.id}
+              onClick={item.onClick}
+              disabled={item.disable}
+              className={`${
+                item.disable
+                  ? 'cursor-not-allowed p-1'
+                  : 'cursor-pointer hover:bg-gray-500 hover:rounded-lg p-1'
+              } + ${item.isActive ? item.isActive : ''}`}
+            >
+              <item.icon />
+            </button>
+            {item.split && (
+              <div className="mx-1 w-[1px] flex bg-gray-500 h-6" />
+            )}
+          </div>
         )
       )}
       <div className="cursor-pointer hover:bg-gray-500 hover:rounded-lg p-1">

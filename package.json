@@ -38,6 +38,7 @@
     "@tiptap/extension-bullet-list": "^2.0.4",
     "@tiptap/extension-color": "^2.0.4",
     "@tiptap/extension-highlight": "^2.0.4",
+    "@tiptap/extension-history": "^2.1.12",
     "@tiptap/extension-image": "^2.1.12",
     "@tiptap/extension-link": "^2.0.4",
     "@tiptap/extension-list-item": "^2.0.4",
