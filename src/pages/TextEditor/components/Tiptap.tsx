@@ -1,7 +1,8 @@
 import './styles.scss';
 import React, { useEffect, useRef, useState } from 'react';
 import { Color } from '@tiptap/extension-color';
-import History from '@tiptap/extension-history';
+import { common, createLowlight } from 'lowlight';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import ListItem from '@tiptap/extension-list-item';
 import TextStyle from '@tiptap/extension-text-style';
 import Table from '@tiptap/extension-table';
@@ -464,6 +465,8 @@ type TiptapProps = {
 
 function Tiptap(props: TiptapProps) {
   const { editorText, content, setContent } = props;
+  const lowlight = createLowlight(common);
+
   const editor = useEditor({
     extensions: [
       Color.configure({ types: [TextStyle.name, ListItem.name] }),
@@ -489,6 +492,9 @@ function Tiptap(props: TiptapProps) {
         HTMLAttributes: {
           class: 'my-custom-class',
         },
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
       }),
       Highlight,
       Document,
