@@ -541,7 +541,7 @@ function Tiptap(props: TiptapProps) {
   }, [content, editor]);
 
   return (
-    <div className="w-full border-black border-4 rounded-2xl">
+    <div>
       <MenuBar editor={editor} setImageURL={setImageURL} />
       <EditorContent
         className="w-full p-3 max-h-[600px] overflow-auto"
