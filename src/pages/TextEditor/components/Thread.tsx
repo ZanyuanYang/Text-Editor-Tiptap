@@ -8,6 +8,7 @@ type ThreadType = {
   description: string;
   expanded: boolean;
   resolved: boolean;
+  range?: Range;
 };
 
 type ThreadProps = {
@@ -17,10 +18,31 @@ type ThreadProps = {
 
 function Thread(props: ThreadProps) {
   const { threads, setThreads } = props;
+
+  function setCursorAfterRange(range: Range) {
+    // Ensure the range object is not null
+    if (!range) return;
+
+    // Create a new range and set its start and end. This example moves the cursor to the end of the provided range.
+    const newRange = document.createRange();
+    newRange.setStart(range.endContainer, range.endOffset);
+    newRange.setEnd(range.endContainer, range.endOffset);
+
+    // Get the selection object
+    const selection = window.getSelection();
+
+    // Remove any current selections
+    selection?.removeAllRanges();
+
+    // Add the new range
+    selection?.addRange(newRange);
+  }
+
   const onClickThread = (id: number) => {
     const newThreads = threads.map((thread) => {
       // If the current thread is the one being clicked and it's not already expanded, expand it.
       if (thread.id === id && !thread.expanded) {
+        setCursorAfterRange(thread.range!);
         return { ...thread, expanded: true };
       }
       // Collapse all other threads.

@@ -28,6 +28,8 @@ import {
   MenubarMenu,
   MenubarTrigger,
 } from '@/components/ui/menubar';
+import { Button } from '@/components/ui/button';
+import Thread from '@/utils/TiptapExtension/ThreadExtension';
 
 const TableMenu = ({ editor }: any) => [
   {
@@ -507,6 +509,7 @@ function Tiptap(props: TiptapProps) {
       TableRow,
       TableHeader,
       TableCell,
+      Thread,
     ],
     editorProps: {
       attributes: {
@@ -524,6 +527,11 @@ function Tiptap(props: TiptapProps) {
       });
     }
   }, [imageURL]);
+
+  const onon = () => {
+    (editor as any).commands.setThread({ id: '1' });
+    // editor.commands.setNode('paragraph', { id: 'paragraph-01' });
+  };
 
   useEffect(() => {
     if (editor && editorText) {
@@ -547,6 +555,7 @@ function Tiptap(props: TiptapProps) {
         className="w-full p-3 max-h-[600px] overflow-auto"
         editor={editor}
       />
+      <Button onClick={() => onon()}>asd</Button>
     </div>
   );
 }
