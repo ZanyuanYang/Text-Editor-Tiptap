@@ -1,23 +1,11 @@
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { useContext } from 'react';
+import { TiptapContext } from '@/contexts/tiptap_context';
 
-type ThreadType = {
-  id: number;
-  username: string;
-  description: string;
-  expanded: boolean;
-  resolved: boolean;
-  range?: Range;
-};
-
-type ThreadProps = {
-  threads: ThreadType[];
-  setThreads: (threads: ThreadType[]) => void;
-};
-
-function Thread(props: ThreadProps) {
-  const { threads, setThreads } = props;
+function Thread() {
+  const { threads, setThreads } = useContext(TiptapContext);
 
   function setCursorAfterRange(range: Range) {
     // Ensure the range object is not null
@@ -110,7 +98,7 @@ function Thread(props: ThreadProps) {
                           {thread.username}
                         </h4>
                         <span className="text-xs text-muted-foreground">
-                          December 2021
+                          {thread.date.toDateString()}
                         </span>
                       </div>
 
@@ -167,7 +155,7 @@ function Thread(props: ThreadProps) {
                           {thread.username}
                         </h4>
                         <span className="text-xs text-muted-foreground">
-                          December 2021
+                          {thread.date.toDateString()}
                         </span>
                       </div>
                       <p className="text-sm">{thread.description}</p>

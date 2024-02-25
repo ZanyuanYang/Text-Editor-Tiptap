@@ -7,11 +7,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
+import { GlobalContext } from '@/contexts/global_context';
 
 type CreateThreadDialogProps = {
-  setError: (value: string) => void;
-  setAlertOpen: (value: boolean) => void;
   selectionInfo: {
     text: string;
     range: Range | undefined;
@@ -20,7 +19,8 @@ type CreateThreadDialogProps = {
 };
 
 function CreateThreadDialog(props: CreateThreadDialogProps) {
-  const { setError, setAlertOpen, selectionInfo, createThread } = props;
+  const { setAlertOpen, setError } = useContext(GlobalContext);
+  const { selectionInfo, createThread } = props;
   const [open, setOpen] = useState<boolean>(false);
   const [description, setDescription] = useState<string>('');
   const onChangeTextarea = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
