@@ -20,15 +20,17 @@ function TextEditor() {
 
   const createThread = (description: string) => {
     const newThread = {
-      id: threads.length + 1,
-      username: 'nextjs', // replace with actual username
+      id: `thread-${threads.length + 1}`,
+      username: 'New User', // replace with actual username
       description,
       expanded: false,
       resolved: false,
       range: selectionInfo.range,
       date: new Date(),
     };
-    (editor as any).commands.setThread({ id: `thread-${threads.length + 1}` });
+    (editor as any).commands.setThread({
+      id: `thread-${threads.length + 1}`,
+    });
     setThreads([...threads, newThread]);
   };
 

@@ -46,10 +46,47 @@ const Thread = Mark.create({
         ({ commands }: any) => {
           return commands.setMark('thread', attributes);
         },
-      unsetThread:
-        () =>
-        ({ commands }: any) => {
-          return commands.unsetMark('thread');
+      // unsetThread:
+      //   () =>
+      //   ({ commands }: any) => {
+      //     return commands.unsetMark('thread');
+      //   },
+      unsetThreadById:
+        (id: string) =>
+        ({ tr, state, dispatch }: any) => {
+          const { doc, selection } = state;
+          const { from, to } = selection;
+          let updated = false;
+
+          doc.descendants(
+            (
+              node: {
+                marks: { type: { name: string }; attrs: { id: string } }[];
+                nodeSize: any;
+              },
+              pos: any
+            ) => {
+              if (!node.marks) return;
+
+              node.marks.forEach(
+                (mark: { type: { name: string }; attrs: { id: string } }) => {
+                  if (mark.type.name === 'thread' && mark.attrs.id === id) {
+                    if (dispatch) {
+                      tr.removeMark(pos, pos + node.nodeSize, mark.type);
+                      updated = true;
+                    }
+                  }
+                }
+              );
+            }
+          );
+
+          if (updated && dispatch) {
+            dispatch(tr);
+            return true;
+          }
+
+          return false;
         },
     };
   },

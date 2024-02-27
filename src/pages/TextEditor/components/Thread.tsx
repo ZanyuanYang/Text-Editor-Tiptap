@@ -3,9 +3,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useContext } from 'react';
 import { TiptapContext } from '@/contexts/tiptap_context';
+import moment from 'moment';
 
 function Thread() {
-  const { threads, setThreads } = useContext(TiptapContext);
+  const { editor, threads, setThreads } = useContext(TiptapContext);
 
   function setCursorAfterRange(range: Range) {
     // Ensure the range object is not null
@@ -26,7 +27,7 @@ function Thread() {
     selection?.addRange(newRange);
   }
 
-  const onClickThread = (id: number) => {
+  const onClickThread = (id: string) => {
     const newThreads = threads.map((thread) => {
       // If the current thread is the one being clicked and it's not already expanded, expand it.
       if (thread.id === id && !thread.expanded) {
@@ -43,7 +44,7 @@ function Thread() {
     setThreads(newThreads);
   };
 
-  const onclickResolve = (e: any, id: number) => {
+  const onclickResolve = (e: any, id: string) => {
     e.stopPropagation();
     const newThreads = threads.map((thread) => {
       if (thread.id === id) {
@@ -54,7 +55,7 @@ function Thread() {
     setThreads(newThreads);
   };
 
-  const onclickUnresolve = (e: any, id: number) => {
+  const onclickUnresolve = (e: any, id: string) => {
     e.stopPropagation();
     const newThreads = threads.map((thread) => {
       if (thread.id === id) {
@@ -65,10 +66,11 @@ function Thread() {
     setThreads(newThreads);
   };
 
-  const onClickDelete = (e: any, id: number) => {
+  const onClickDelete = (e: any, id: string) => {
     e.stopPropagation();
     const newThreads = threads.filter((thread) => thread.id !== id);
     setThreads(newThreads);
+    (editor as any).commands.unsetThreadById(id);
   };
 
   return (
@@ -98,7 +100,7 @@ function Thread() {
                           {thread.username}
                         </h4>
                         <span className="text-xs text-muted-foreground">
-                          {thread.date.toDateString()}
+                          {moment(thread.date).format('YYYY-MM-DD hh:mm A')}
                         </span>
                       </div>
 
@@ -155,7 +157,7 @@ function Thread() {
                           {thread.username}
                         </h4>
                         <span className="text-xs text-muted-foreground">
-                          {thread.date.toDateString()}
+                          {moment(thread.date).format('YYYY-MM-DD hh:mm A')}
                         </span>
                       </div>
                       <p className="text-sm">{thread.description}</p>

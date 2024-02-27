@@ -21,7 +21,7 @@ import TableCell from '@tiptap/extension-table-cell';
 import Thread from '@/utils/TiptapExtension/ThreadExtension';
 
 type ThreadType = {
-  id: number;
+  id: string;
   username: string;
   description: string;
   expanded: boolean;
@@ -32,40 +32,40 @@ type ThreadType = {
 
 const ThreadsInit: ThreadType[] = [
   {
-    id: 1,
-    username: 'nextjs',
+    id: 'thread-1',
+    username: 'User1',
     description: 'This is a description of thread 1',
     expanded: false,
     resolved: true,
     date: new Date(),
   },
   {
-    id: 2,
-    username: 'nextjs',
+    id: 'thread-2',
+    username: 'User2',
     description: 'This is a description of thread 2',
     expanded: true,
     resolved: false,
     date: new Date(),
   },
   {
-    id: 3,
-    username: 'nextjs',
+    id: 'thread-3',
+    username: 'User3',
     description: 'This is a description of thread 3',
     expanded: false,
     resolved: false,
     date: new Date(),
   },
   {
-    id: 4,
-    username: 'nextjs',
+    id: 'thread-4',
+    username: 'User4',
     description: 'This is a description of thread 4',
     expanded: false,
     resolved: false,
     date: new Date(),
   },
   {
-    id: 5,
-    username: 'nextjs',
+    id: 'thread-5',
+    username: 'User5',
     description: 'This is a description of thread 5',
     expanded: false,
     resolved: false,
