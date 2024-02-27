@@ -1,24 +1,6 @@
 import './styles.scss';
-import React, { useEffect, useRef, useState } from 'react';
-import { Color } from '@tiptap/extension-color';
-import { common, createLowlight } from 'lowlight';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import ListItem from '@tiptap/extension-list-item';
-import TextStyle from '@tiptap/extension-text-style';
-import Table from '@tiptap/extension-table';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
-import TableRow from '@tiptap/extension-table-row';
-import Underline from '@tiptap/extension-underline';
-import Document from '@tiptap/extension-document';
-import Gapcursor from '@tiptap/extension-gapcursor';
-import Paragraph from '@tiptap/extension-paragraph';
-import Text from '@tiptap/extension-text';
-import Image from '@tiptap/extension-image';
-import Highlight from '@tiptap/extension-highlight';
-import TextAlign from '@tiptap/extension-text-align';
-import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { EditorContent } from '@tiptap/react';
 
 import { Icons } from '@/components/icons';
 import {
@@ -28,6 +10,7 @@ import {
   MenubarMenu,
   MenubarTrigger,
 } from '@/components/ui/menubar';
+import { TiptapContext } from '@/contexts/tiptap_context';
 
 const TableMenu = ({ editor }: any) => [
   {
@@ -361,7 +344,8 @@ const MenuBarIcon = ({ editor }: any) => [
   },
 ];
 
-function MenuBar({ editor, setImageURL }: any) {
+function MenuBar({ setImageURL }: any) {
+  const { editor } = useContext(TiptapContext);
   const [open, setOpen] = useState<boolean>(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -457,64 +441,9 @@ function MenuBar({ editor, setImageURL }: any) {
   );
 }
 
-type TiptapProps = {
-  content: string;
-  setContent: (content: string) => void;
-  editorText: string;
-};
-
-function Tiptap(props: TiptapProps) {
-  const { editorText, content, setContent } = props;
-  const lowlight = createLowlight(common);
-
-  const editor = useEditor({
-    extensions: [
-      Color.configure({ types: [TextStyle.name, ListItem.name] }),
-      TextStyle.configure({ types: [ListItem.name] } as any),
-      StarterKit.configure({
-        bulletList: {
-          keepMarks: true,
-          keepAttributes: false, // TODO : Making this as `false` becase marks are not preserved when I try to preserve attrs, awaiting a bit of help
-        },
-        orderedList: {
-          keepMarks: true,
-          keepAttributes: false, // TODO : Making this as `false` becase marks are not preserved when I try to preserve attrs, awaiting a bit of help
-        },
-      }),
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Image.configure({
-        inline: true,
-        allowBase64: true,
-      }),
-      Underline.configure({
-        HTMLAttributes: {
-          class: 'my-custom-class',
-        },
-      }),
-      CodeBlockLowlight.configure({
-        lowlight,
-      }),
-      Highlight,
-      Document,
-      Paragraph,
-      Text,
-      Gapcursor,
-      Table.configure({
-        resizable: true,
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-    ],
-    editorProps: {
-      attributes: {
-        class: 'm-2 focus:outline-none',
-      },
-    },
-    content,
-  });
+function Tiptap() {
+  const { editor, content, setContent, threads, editorText } =
+    useContext(TiptapContext);
   const [imageURL, setImageURL] = useState<string | null>(null);
 
   useEffect(() => {
@@ -541,7 +470,7 @@ function Tiptap(props: TiptapProps) {
   }, [content, editor]);
 
   return (
-    <div className="w-full border-black border-4 rounded-2xl">
+    <div>
       <MenuBar editor={editor} setImageURL={setImageURL} />
       <EditorContent
         className="w-full p-3 max-h-[600px] overflow-auto"

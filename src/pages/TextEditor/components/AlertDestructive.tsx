@@ -1,11 +1,9 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useContext } from 'react';
+import { GlobalContext } from '@/contexts/global_context';
 
-type Props = {
-  error: string;
-};
-
-export default function AlertDestructive(props: Props) {
-  const { error } = props;
+export default function AlertDestructive() {
+  const { error } = useContext(GlobalContext);
   return (
     <Alert
       variant="destructive"

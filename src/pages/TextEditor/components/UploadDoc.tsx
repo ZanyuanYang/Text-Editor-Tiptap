@@ -1,16 +1,13 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import mammoth from 'mammoth';
+import { useContext } from 'react';
+import { TiptapContext } from '@/contexts/tiptap_context';
+import { GlobalContext } from '@/contexts/global_context';
 
-type UploadDocProps = {
-  setError: (value: string) => void;
-  setAlertOpen: (value: boolean) => void;
-  setHtmlContent: (htmlContent: string) => void;
-  setContent: (content: string) => void;
-};
-
-function UploadDoc(props: UploadDocProps) {
-  const { setError, setAlertOpen, setHtmlContent, setContent } = props;
+function UploadDoc() {
+  const { setContent, setHtmlContent } = useContext(TiptapContext);
+  const { setAlertOpen, setError } = useContext(GlobalContext);
 
   const displayResult = (result: any) => {
     setHtmlContent(result.value);

@@ -17,6 +17,9 @@ Visit http://localhost:5173/ in your browser.
 
 ## ⛑️ Features
 
+- [Create Threads](https://tiptap.dev/docs/editor/comments/introduction)
+  - Same feature as comments in Tiptap(`Beta` Requirement), but I build it own(`Free`).
+  - ![img.png](src/assets/thread.png)
 - Upload .docx 
 - Heading
 - Bold
