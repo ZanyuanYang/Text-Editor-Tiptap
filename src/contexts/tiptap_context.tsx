@@ -85,8 +85,12 @@ function TiptapProvider({ children }: { children: React.ReactNode }) {
       Link.configure({
         openOnClick: false,
         autolink: true,
+        linkOnPaste: true,
+        protocols: ['http', 'https', 'mailto', 'tel', 'ftp', 'ftps', 'sms'],
         HTMLAttributes: {
           class: 'text-primary underline underline-offset-2 hover:opacity-80',
+          target: '_blank',
+          rel: 'noopener noreferrer nofollow',
         },
       }),
       TaskList,

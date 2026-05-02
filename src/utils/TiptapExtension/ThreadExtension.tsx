@@ -1,34 +1,36 @@
-import { Mark, mergeAttributes } from '@tiptap/core';
+import { Mark, mergeAttributes, type RawCommands } from '@tiptap/core';
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    thread: {
+      setThread: (attributes: { id: string }) => ReturnType;
+      unsetThreadById: (id: string) => ReturnType;
+    };
+  }
+}
 
 const Thread = Mark.create({
   name: 'thread',
 
-  // Default attributes for your mark
   addOptions() {
     return {
       HTMLAttributes: {},
     };
   },
 
-  // Define how attributes are parsed from HTML
   addAttributes() {
     return {
       id: {
         default: null,
         parseHTML: (element) => element.getAttribute('id'),
         renderHTML: (attributes) => {
-          if (!attributes.id) {
-            return {};
-          }
-          return {
-            id: attributes.id,
-          };
+          if (!attributes.id) return {};
+          return { id: attributes.id };
         },
       },
     };
   },
 
-  // Define how the mark is rendered to HTML
   renderHTML({ HTMLAttributes }) {
     return [
       'span',
@@ -40,48 +42,28 @@ const Thread = Mark.create({
     ];
   },
 
-  // Define how this mark interacts with the editor commands
-  addCommands(): any {
+  addCommands() {
     return {
       setThread:
-        (attributes: any) =>
-        ({ commands }: any) => {
-          return commands.setMark('thread', attributes);
-        },
-      // unsetThread:
-      //   () =>
-      //   ({ commands }: any) => {
-      //     return commands.unsetMark('thread');
-      //   },
+        (attributes) =>
+        ({ commands }) =>
+          commands.setMark('thread', attributes),
+
       unsetThreadById:
-        (id: string) =>
-        ({ tr, state, dispatch }: any) => {
-          const { doc, selection } = state;
-          const { from, to } = selection;
+        (id) =>
+        ({ tr, state, dispatch }) => {
           let updated = false;
 
-          doc.descendants(
-            (
-              node: {
-                marks: { type: { name: string }; attrs: { id: string } }[];
-                nodeSize: any;
-              },
-              pos: any
-            ) => {
-              if (!node.marks) return;
-
-              node.marks.forEach(
-                (mark: { type: { name: string }; attrs: { id: string } }) => {
-                  if (mark.type.name === 'thread' && mark.attrs.id === id) {
-                    if (dispatch) {
-                      tr.removeMark(pos, pos + node.nodeSize, mark.type);
-                      updated = true;
-                    }
-                  }
+          state.doc.descendants((node, pos) => {
+            node.marks.forEach((mark) => {
+              if (mark.type.name === 'thread' && mark.attrs.id === id) {
+                if (dispatch) {
+                  tr.removeMark(pos, pos + node.nodeSize, mark.type);
+                  updated = true;
                 }
-              );
-            }
-          );
+              }
+            });
+          });
 
           if (updated && dispatch) {
             dispatch(tr);
@@ -90,7 +72,7 @@ const Thread = Mark.create({
 
           return false;
         },
-    };
+    } satisfies Partial<RawCommands>;
   },
 });
 

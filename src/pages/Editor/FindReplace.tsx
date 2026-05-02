@@ -75,6 +75,8 @@ export function FindReplace({
 
   if (!open) return null;
 
+  const currentMatch = matches[Math.min(activeIdx, matches.length - 1)];
+
   const next = () => {
     if (matches.length === 0) return;
     setActiveIdx((i) => (i + 1) % matches.length);
@@ -84,18 +86,29 @@ export function FindReplace({
     setActiveIdx((i) => (i - 1 + matches.length) % matches.length);
   };
   const replaceOne = () => {
-    if (!editor || matches.length === 0) return;
-    const m = matches[Math.min(activeIdx, matches.length - 1)];
-    if (!m) return;
-    editor.chain().focus().setTextSelection(m).insertContent(replacement).run();
+    if (!editor || !currentMatch) return;
+    editor
+      .chain()
+      .focus()
+      .setTextSelection(currentMatch)
+      .insertContent(replacement)
+      .run();
   };
   const replaceAll = () => {
     if (!editor || matches.length === 0) return;
-    const chain = editor.chain().focus();
+    // Apply all replacements in one transaction, end-to-start so earlier
+    // positions remain valid as we rewrite later spans.
+    const tr = editor.state.tr;
     for (let i = matches.length - 1; i >= 0; i--) {
-      chain.setTextSelection(matches[i]).insertContent(replacement);
+      const m = matches[i];
+      if (replacement) {
+        tr.replaceWith(m.from, m.to, editor.schema.text(replacement));
+      } else {
+        tr.delete(m.from, m.to);
+      }
     }
-    chain.run();
+    editor.view.dispatch(tr);
+    editor.commands.focus();
   };
 
   return (

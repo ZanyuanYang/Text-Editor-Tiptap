@@ -139,6 +139,8 @@ export function CommandPalette({
     return map;
   }, [filtered]);
 
+  const activeId = filtered[selected]?.id;
+
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -155,8 +157,6 @@ export function CommandPalette({
       filtered[selected]?.run();
     }
   };
-
-  let runningIndex = -1;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -189,33 +189,30 @@ export function CommandPalette({
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 pt-2 pb-1">
                 {group}
               </div>
-              {items.map((a) => {
-                runningIndex += 1;
-                const idx = runningIndex;
-                const active = idx === selected;
-                return (
-                  <button
-                    key={a.id}
-                    type="button"
-                    onMouseEnter={() => setSelected(idx)}
-                    onClick={() => a.run()}
-                    className={cn(
-                      'w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm',
-                      active && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <span className="flex h-7 w-7 items-center justify-center">
-                      {a.icon}
+              {items.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onMouseEnter={() =>
+                    setSelected(filtered.findIndex((x) => x.id === a.id))
+                  }
+                  onClick={() => a.run()}
+                  className={cn(
+                    'w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm',
+                    a.id === activeId && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <span className="flex h-7 w-7 items-center justify-center">
+                    {a.icon}
+                  </span>
+                  <span className="flex-1 min-w-0 truncate">{a.label}</span>
+                  {a.hint && (
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {a.hint}
                     </span>
-                    <span className="flex-1 min-w-0 truncate">{a.label}</span>
-                    {a.hint && (
-                      <span className="text-[10px] text-muted-foreground shrink-0">
-                        {a.hint}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                  )}
+                </button>
+              ))}
             </div>
           ))}
         </div>
