@@ -1,4 +1,4 @@
-import TextEditor from './TextEditor';
+import EditorPage from './Editor';
 import Error from './Error';
 
-export { TextEditor, Error };
+export { EditorPage, Error };

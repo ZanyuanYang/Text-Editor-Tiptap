@@ -4,8 +4,10 @@ const Thread = Mark.create({
   name: 'thread',
 
   // Default attributes for your mark
-  defaultOptions: {
-    HTMLAttributes: {},
+  addOptions() {
+    return {
+      HTMLAttributes: {},
+    };
   },
 
   // Define how attributes are parsed from HTML

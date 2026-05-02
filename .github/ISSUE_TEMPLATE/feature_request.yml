@@ -1,0 +1,54 @@
+name: ✨ Feature request
+description: Suggest an idea, improvement, or new capability
+title: "[feat]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Frame it as a problem first, solution second.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What's the user friction today?
+      placeholder: Today I can't reorder pages in the sidebar without deleting them.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should happen?
+      placeholder: Add drag-and-drop reordering with a visible drop indicator.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you thought about and why they're worse.
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - Editor command / extension
+        - UI / layout
+        - Persistence / sync
+        - Import / export
+        - Performance
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: extras
+    attributes:
+      label: Anything else?
+      description: Mockups, links, prior art, references.

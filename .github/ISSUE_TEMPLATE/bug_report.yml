@@ -1,0 +1,79 @@
+name: 🐛 Bug report
+description: Something isn't working as expected
+title: "[bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! Please fill in as much as you can — it makes triage massively faster.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: When I press / on a new line, nothing appears.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: The slash command menu should appear below the cursor.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered list. Be specific about what to type / click.
+      placeholder: |
+        1. Open a new page from the sidebar
+        2. Click into the editor
+        3. Press `/`
+        4. Observe nothing happens
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser & version
+      placeholder: Chrome 130, Safari 18.1, Firefox 130, …
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: macOS 15, Windows 11, Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors / screenshots
+      description: Open DevTools → Console. Paste any red errors. Drag images here for screenshots.
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: Editor version
+      description: From `package.json` `version`, or "main" if running from a fresh clone.
+      placeholder: "0.2.0"
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I searched existing issues and didn't find a duplicate
+          required: true
+        - label: I can reproduce this on a fresh `npm install` from the latest `master`
+          required: false

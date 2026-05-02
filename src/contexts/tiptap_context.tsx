@@ -1,181 +1,153 @@
-import React, { createContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { common, createLowlight } from 'lowlight';
-import { useEditor } from '@tiptap/react';
-import { Color } from '@tiptap/extension-color';
-import TextStyle from '@tiptap/extension-text-style';
-import ListItem from '@tiptap/extension-list-item';
+import { useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import ListItem from '@tiptap/extension-list-item';
 import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import Highlight from '@tiptap/extension-highlight';
-import Document from '@tiptap/extension-document';
-import Paragraph from '@tiptap/extension-paragraph';
-import Text from '@tiptap/extension-text';
 import Gapcursor from '@tiptap/extension-gapcursor';
-import Table from '@tiptap/extension-table';
+import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
+import Link from '@tiptap/extension-link';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import Placeholder from '@tiptap/extension-placeholder';
+import CharacterCount from '@tiptap/extension-character-count';
+import Typography from '@tiptap/extension-typography';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
+import HorizontalRule from '@tiptap/extension-horizontal-rule';
+import Youtube from '@tiptap/extension-youtube';
 import Thread from '@/utils/TiptapExtension/ThreadExtension';
-
-type ThreadType = {
-  id: string;
-  username: string;
-  description: string;
-  expanded: boolean;
-  resolved: boolean;
-  date: Date;
-  range?: Range;
-};
-
-const ThreadsInit: ThreadType[] = [
-  {
-    id: 'thread-1',
-    username: 'User1',
-    description: 'This is a description of thread 1',
-    expanded: false,
-    resolved: true,
-    date: new Date(),
-  },
-  {
-    id: 'thread-2',
-    username: 'User2',
-    description: 'This is a description of thread 2',
-    expanded: true,
-    resolved: false,
-    date: new Date(),
-  },
-  {
-    id: 'thread-3',
-    username: 'User3',
-    description: 'This is a description of thread 3',
-    expanded: false,
-    resolved: false,
-    date: new Date(),
-  },
-  {
-    id: 'thread-4',
-    username: 'User4',
-    description: 'This is a description of thread 4',
-    expanded: false,
-    resolved: false,
-    date: new Date(),
-  },
-  {
-    id: 'thread-5',
-    username: 'User5',
-    description: 'This is a description of thread 5',
-    expanded: false,
-    resolved: false,
-    date: new Date(),
-  },
-];
-
-type TiptapContextProviderProps = {
-  children: React.ReactNode;
-};
+import SlashCommand from '@/extensions/SlashCommand';
+import { useDocuments } from '@/contexts/documents_context';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
+import type { ThreadType } from '@/lib/types';
 
 type TiptapContextType = {
-  editor: any;
-  content: string;
-  setContent: (content: string) => void;
+  editor: Editor | null;
   threads: ThreadType[];
   setThreads: (threads: ThreadType[]) => void;
-  editorText: string;
-  setEditorText: (editorText: string) => void;
-  htmlContent: string;
-  setHtmlContent: (htmlContent: string) => void;
 };
 
 const TiptapContext = createContext<TiptapContextType>({
   editor: null,
-  content: '',
-  setContent: () => {},
   threads: [],
   setThreads: () => {},
-  editorText: '',
-  setEditorText: () => {},
-  htmlContent: '',
-  setHtmlContent: () => {},
 });
 
-function TiptapProvider({ children }: TiptapContextProviderProps) {
-  const [content, setContent] = useState<string>('');
-  const [editorText, setEditorText] = useState<string>('');
-  const [threads, setThreads] = useState<ThreadType[]>(ThreadsInit);
-  const [htmlContent, setHtmlContent] = useState<string>('');
+const lowlight = createLowlight(common);
 
-  const lowlight = createLowlight(common);
+function TiptapProvider({ children }: { children: React.ReactNode }) {
+  const { activeId, activeDoc, updateContent, updateThreads } = useDocuments();
+  const lastSyncedIdRef = useRef<string | null>(null);
+
+  const debouncedContent = useDebouncedCallback<[string, ReturnType<Editor['getJSON']>]>(
+    (id, content) => updateContent(id, content),
+    300
+  );
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
-      Color.configure({ types: [TextStyle.name, ListItem.name] }),
-      TextStyle.configure({ types: [ListItem.name] } as any),
       StarterKit.configure({
-        bulletList: {
-          keepMarks: true,
-          keepAttributes: false, // TODO : Making this as `false` becase marks are not preserved when I try to preserve attrs, awaiting a bit of help
-        },
-        orderedList: {
-          keepMarks: true,
-          keepAttributes: false, // TODO : Making this as `false` becase marks are not preserved when I try to preserve attrs, awaiting a bit of help
-        },
+        bulletList: { keepMarks: true, keepAttributes: false },
+        orderedList: { keepMarks: true, keepAttributes: false },
+        horizontalRule: false,
       }),
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Image.configure({
-        inline: true,
-        allowBase64: true,
-      }),
-      Underline.configure({
-        HTMLAttributes: {
-          class: 'my-custom-class',
-        },
-      }),
-      CodeBlockLowlight.configure({
-        lowlight,
-      }),
-      Highlight,
-      Document,
-      Paragraph,
-      Text,
+      Color.configure({ types: [TextStyle.name, ListItem.name] }),
+      TextStyle.configure({} as never),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Image.configure({ inline: false, allowBase64: true }),
+      Underline,
+      CodeBlockLowlight.configure({ lowlight }),
+      Highlight.configure({ multicolor: true }),
       Gapcursor,
-      Table.configure({
-        resizable: true,
-      }),
+      Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
       TableCell,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: {
+          class: 'text-primary underline underline-offset-2 hover:opacity-80',
+        },
+      }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Placeholder.configure({
+        placeholder: ({ node }) => {
+          if (node.type.name === 'heading') return 'Heading';
+          return "Press '/' for commands…";
+        },
+        showOnlyCurrent: true,
+      }),
+      CharacterCount.configure(),
+      Typography,
+      Subscript,
+      Superscript,
+      HorizontalRule,
+      Youtube.configure({ controls: true, nocookie: true }),
       Thread,
+      SlashCommand,
     ],
     editorProps: {
       attributes: {
-        class: 'm-2 focus:outline-none',
+        class:
+          'prose prose-neutral dark:prose-invert max-w-none focus:outline-none px-12 py-8 min-h-[60vh]',
       },
     },
-    content,
+    content: activeDoc?.content ?? { type: 'doc', content: [{ type: 'paragraph' }] },
+    onUpdate: ({ editor: ed }) => {
+      if (!activeId) return;
+      debouncedContent.call(activeId, ed.getJSON());
+    },
   });
 
-  return (
-    <TiptapContext.Provider
-      value={{
-        editor,
-        content,
-        setContent,
-        threads,
-        setThreads,
-        editorText,
-        setEditorText,
-        htmlContent,
-        setHtmlContent,
-      }}
-    >
-      {children}
-    </TiptapContext.Provider>
+  useEffect(() => {
+    if (!editor || !activeDoc) return;
+    if (lastSyncedIdRef.current === activeDoc.id) return;
+    lastSyncedIdRef.current = activeDoc.id;
+    debouncedContent.flush();
+    editor.commands.setContent(activeDoc.content, { emitUpdate: false });
+  }, [editor, activeDoc, debouncedContent]);
+
+  const setThreads = useMemo(
+    () => (next: ThreadType[]) => {
+      if (!activeId) return;
+      updateThreads(activeId, next);
+    },
+    [activeId, updateThreads]
   );
+
+  const value = useMemo<TiptapContextType>(
+    () => ({
+      editor,
+      threads: activeDoc?.threads ?? [],
+      setThreads,
+    }),
+    [editor, activeDoc, setThreads]
+  );
+
+  return <TiptapContext.Provider value={value}>{children}</TiptapContext.Provider>;
 }
 
-export { TiptapProvider, TiptapContext };
+function useTiptap(): TiptapContextType {
+  return useContext(TiptapContext);
+}
+
+export { TiptapProvider, TiptapContext, useTiptap };

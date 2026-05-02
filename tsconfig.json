@@ -14,16 +14,14 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
   },
   "include": [
-    ".eslintrc.cjs",
-    "src",
-    "vite.config.ts"
+    "src"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

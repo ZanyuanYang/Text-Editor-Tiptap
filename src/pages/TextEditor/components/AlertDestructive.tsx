@@ -7,7 +7,7 @@ export default function AlertDestructive() {
   return (
     <Alert
       variant="destructive"
-      className="fixed top-2 right-8 w-96 animate__animated animate__bounceInRight"
+      className="fixed top-4 right-4 w-96 z-50 shadow-lg animate-in slide-in-from-right-8 fade-in duration-300"
     >
       <AlertTitle>Error</AlertTitle>
       <AlertDescription>{error}</AlertDescription>
