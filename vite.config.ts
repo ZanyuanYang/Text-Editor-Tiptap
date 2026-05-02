@@ -16,7 +16,11 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
-          if (id.includes('@tiptap') || id.includes('prosemirror') || id.includes('tippy.js')) {
+          if (
+            id.includes('@tiptap') ||
+            id.includes('prosemirror') ||
+            id.includes('tippy.js')
+          ) {
             return 'tiptap';
           }
           if (id.includes('@radix-ui')) {

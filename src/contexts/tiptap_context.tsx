@@ -31,8 +31,11 @@ import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Youtube from '@tiptap/extension-youtube';
+import FontFamily from '@tiptap/extension-font-family';
 import Thread from '@/utils/TiptapExtension/ThreadExtension';
 import SlashCommand from '@/extensions/SlashCommand';
+import { InlineMath, BlockMath } from '@/extensions/Math';
+import DocumentMention from '@/extensions/Mention';
 import { useDocuments } from '@/contexts/documents_context';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import type { ThreadType } from '@/lib/types';
@@ -55,10 +58,9 @@ function TiptapProvider({ children }: { children: React.ReactNode }) {
   const { activeId, activeDoc, updateContent, updateThreads } = useDocuments();
   const lastSyncedIdRef = useRef<string | null>(null);
 
-  const debouncedContent = useDebouncedCallback<[string, ReturnType<Editor['getJSON']>]>(
-    (id, content) => updateContent(id, content),
-    300
-  );
+  const debouncedContent = useDebouncedCallback<
+    [string, ReturnType<Editor['getJSON']>]
+  >((id, content) => updateContent(id, content), 300);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -102,6 +104,10 @@ function TiptapProvider({ children }: { children: React.ReactNode }) {
       Superscript,
       HorizontalRule,
       Youtube.configure({ controls: true, nocookie: true }),
+      FontFamily,
+      InlineMath,
+      BlockMath,
+      DocumentMention,
       Thread,
       SlashCommand,
     ],
@@ -111,7 +117,10 @@ function TiptapProvider({ children }: { children: React.ReactNode }) {
           'prose prose-neutral dark:prose-invert max-w-none focus:outline-none px-12 py-8 min-h-[60vh]',
       },
     },
-    content: activeDoc?.content ?? { type: 'doc', content: [{ type: 'paragraph' }] },
+    content: activeDoc?.content ?? {
+      type: 'doc',
+      content: [{ type: 'paragraph' }],
+    },
     onUpdate: ({ editor: ed }) => {
       if (!activeId) return;
       debouncedContent.call(activeId, ed.getJSON());
@@ -143,7 +152,9 @@ function TiptapProvider({ children }: { children: React.ReactNode }) {
     [editor, activeDoc, setThreads]
   );
 
-  return <TiptapContext.Provider value={value}>{children}</TiptapContext.Provider>;
+  return (
+    <TiptapContext.Provider value={value}>{children}</TiptapContext.Provider>
+  );
 }
 
 function useTiptap(): TiptapContextType {

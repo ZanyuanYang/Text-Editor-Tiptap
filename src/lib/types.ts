@@ -20,6 +20,7 @@ export type Document = {
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
   order: number;
+  starred?: boolean;
 };
 
 export type Theme = 'light' | 'dark' | 'system';

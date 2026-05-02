@@ -6,10 +6,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import {
-  EditorContent,
-  type Editor as TiptapEditor,
-} from '@tiptap/react';
+import { EditorContent, type Editor as TiptapEditor } from '@tiptap/react';
 import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus';
 import {
   Bold,
@@ -18,10 +15,13 @@ import {
   Code as CodeIcon,
   Copy,
   Download,
+  Eraser,
   FileDown,
   FileUp,
   Highlighter,
+  Indent,
   Italic,
+  Keyboard,
   Link as LinkIcon,
   List as ListIcon,
   ListOrdered,
@@ -29,10 +29,15 @@ import {
   Monitor,
   Moon,
   MoreHorizontal,
+  Outdent,
   Pencil,
   Plus,
+  Printer,
   Quote,
   Redo2,
+  Search,
+  Sigma,
+  Star,
   Strikethrough,
   Sun,
   Trash2,
@@ -64,23 +69,65 @@ import { TiptapContext, TiptapProvider } from '@/contexts/tiptap_context';
 import { GlobalContext } from '@/contexts/global_context';
 import { useTheme } from '@/hooks/useTheme';
 import { jsonToMarkdown, downloadFile } from '@/lib/markdown';
+import { TEMPLATES } from '@/lib/templates';
 import type { Document, ThreadType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import AlertDestructive from '@/pages/TextEditor/components/AlertDestructive';
+import FindReplace from '@/pages/Editor/FindReplace';
+import CommandPalette from '@/pages/Editor/CommandPalette';
+import ShortcutsDialog from '@/pages/Editor/ShortcutsDialog';
 
-const COMMON_EMOJIS = [
-  '📝', '📄', '📚', '📌', '📔',
-  '🗒️', '🗂️', '✨', '💡', '🚀',
-  '🎯', '🧠', '🛠️', '🐛', '🌱',
-  '🔥', '⭐', '👋', '☕', '🎨',
+const HIGHLIGHT_COLORS = [
+  { name: 'Yellow', value: '#fef3c7' },
+  { name: 'Pink', value: '#fce7f3' },
+  { name: 'Green', value: '#d1fae5' },
+  { name: 'Blue', value: '#dbeafe' },
+  { name: 'Purple', value: '#ede9fe' },
+  { name: 'Orange', value: '#ffedd5' },
 ];
 
-function getHeadings(doc: Document): { id: string; text: string; level: number }[] {
+const FONT_FAMILIES = [
+  { name: 'Default', value: '' },
+  { name: 'Sans-serif', value: 'ui-sans-serif, system-ui, -apple-system, sans-serif' },
+  { name: 'Serif', value: 'ui-serif, Georgia, Cambria, "Times New Roman", serif' },
+  { name: 'Mono', value: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' },
+];
+
+const COMMON_EMOJIS = [
+  '📝',
+  '📄',
+  '📚',
+  '📌',
+  '📔',
+  '🗒️',
+  '🗂️',
+  '✨',
+  '💡',
+  '🚀',
+  '🎯',
+  '🧠',
+  '🛠️',
+  '🐛',
+  '🌱',
+  '🔥',
+  '⭐',
+  '👋',
+  '☕',
+  '🎨',
+];
+
+function getHeadings(
+  doc: Document
+): { id: string; text: string; level: number }[] {
   const out: { id: string; text: string; level: number }[] = [];
   let counter = 0;
   function walk(node: unknown): void {
     if (!node || typeof node !== 'object') return;
-    const n = node as { type?: string; attrs?: { level?: number }; content?: unknown[] };
+    const n = node as {
+      type?: string;
+      attrs?: { level?: number };
+      content?: unknown[];
+    };
     if (n.type === 'heading') {
       const text = (n.content ?? [])
         .map((c) => (c as { text?: string }).text ?? '')
@@ -116,15 +163,174 @@ function Sidebar({
     duplicateDocument,
     setActive,
     setEmoji,
+    toggleStar,
     renameDocument,
   } = useDocuments();
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
+  const [search, setSearch] = useState('');
+
+  const visibleIds = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return orderedIds;
+    return orderedIds.filter((id) =>
+      (documents[id]?.title ?? '').toLowerCase().includes(q)
+    );
+  }, [orderedIds, documents, search]);
+
+  const starredIds = useMemo(
+    () => visibleIds.filter((id) => documents[id]?.starred),
+    [visibleIds, documents]
+  );
+  const otherIds = useMemo(
+    () => visibleIds.filter((id) => !documents[id]?.starred),
+    [visibleIds, documents]
+  );
+
+  const renderSidebarRow = (id: string) => {
+    const doc = documents[id];
+    if (!doc) return null;
+    const isActive = id === activeId;
+    const isRenaming = renamingId === id;
+    return (
+      <div
+        key={id}
+        className={cn(
+          'group flex items-center gap-1 rounded-md px-2 py-1.5 text-sm cursor-pointer',
+          isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/60'
+        )}
+        onClick={() => !isRenaming && setActive(id)}
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="text-base leading-none -ml-0.5 hover:scale-110 transition"
+              aria-label="Change emoji"
+            >
+              {doc.emoji}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="grid grid-cols-5 gap-1 p-2 w-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {COMMON_EMOJIS.map((em) => (
+              <button
+                key={em}
+                type="button"
+                className="p-1 text-xl hover:bg-accent rounded"
+                onClick={() => setEmoji(id, em)}
+              >
+                {em}
+              </button>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {isRenaming ? (
+          <input
+            autoFocus
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            onBlur={() => {
+              renameDocument(id, draftTitle.trim() || 'Untitled');
+              setRenamingId(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                renameDocument(id, draftTitle.trim() || 'Untitled');
+                setRenamingId(null);
+              }
+              if (e.key === 'Escape') setRenamingId(null);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="flex-1 min-w-0 bg-transparent outline-none border-b border-ring text-sm"
+          />
+        ) : (
+          <span className="flex-1 truncate">{doc.title || 'Untitled'}</span>
+        )}
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleStar(id);
+          }}
+          className={cn(
+            'p-0.5 rounded hover:bg-background transition',
+            doc.starred
+              ? 'opacity-100 text-yellow-500'
+              : 'opacity-0 group-hover:opacity-100 text-muted-foreground'
+          )}
+          aria-label={doc.starred ? 'Unstar' : 'Star'}
+        >
+          <Star
+            className={cn('h-3.5 w-3.5', doc.starred && 'fill-yellow-400')}
+          />
+        </button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background"
+              aria-label="Page options"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <DropdownMenuItem
+              onClick={() => {
+                setRenamingId(id);
+                setDraftTitle(doc.title);
+              }}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toggleStar(id)}>
+              <Star className="mr-2 h-4 w-4" />
+              {doc.starred ? 'Unstar' : 'Star'}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => duplicateDocument(id)}>
+              <Copy className="mr-2 h-4 w-4" />
+              Duplicate
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => {
+                if (
+                  confirm(`Delete "${doc.title}"? This cannot be undone.`)
+                ) {
+                  deleteDocument(id);
+                }
+              }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    );
+  };
 
   if (collapsed) {
     return (
       <aside className="w-10 shrink-0 border-r bg-muted/30 flex flex-col items-center py-3">
-        <Button variant="ghost" size="icon" onClick={onToggle} aria-label="Expand sidebar">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggle}
+          aria-label="Expand sidebar"
+        >
           <ChevronRight className="h-4 w-4" />
         </Button>
       </aside>
@@ -136,15 +342,38 @@ function Sidebar({
       <div className="flex items-center justify-between px-3 py-3 border-b">
         <span className="text-sm font-semibold tracking-tight">Pages</span>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => createDocument()}
-            aria-label="New page"
-            className="h-7 w-7"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="New page"
+                className="h-7 w-7"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">
+                New from template
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {TEMPLATES.map((t) => (
+                <DropdownMenuItem
+                  key={t.id}
+                  onClick={() => createDocument(t.build())}
+                >
+                  <span className="mr-2 text-base">{t.emoji}</span>
+                  <span className="flex flex-col">
+                    <span className="text-sm">{t.name}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {t.description}
+                    </span>
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="icon"
@@ -156,121 +385,42 @@ function Sidebar({
           </Button>
         </div>
       </div>
+      <div className="px-2 pt-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search pages…"
+            className="w-full h-7 pl-7 pr-2 text-xs rounded-md border bg-background outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+      </div>
       <nav className="flex-1 overflow-auto p-2 space-y-0.5">
         {orderedIds.length === 0 && (
           <p className="text-xs text-muted-foreground px-2 py-4">
             No pages yet. Click + to create one.
           </p>
         )}
-        {orderedIds.map((id) => {
-          const doc = documents[id];
-          if (!doc) return null;
-          const isActive = id === activeId;
-          const isRenaming = renamingId === id;
-          return (
-            <div
-              key={id}
-              className={cn(
-                'group flex items-center gap-1 rounded-md px-2 py-1.5 text-sm cursor-pointer',
-                isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/60'
-              )}
-              onClick={() => !isRenaming && setActive(id)}
-            >
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <button
-                    type="button"
-                    className="text-base leading-none -ml-0.5 hover:scale-110 transition"
-                    aria-label="Change emoji"
-                  >
-                    {doc.emoji}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="grid grid-cols-5 gap-1 p-2 w-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {COMMON_EMOJIS.map((em) => (
-                    <button
-                      key={em}
-                      type="button"
-                      className="p-1 text-xl hover:bg-accent rounded"
-                      onClick={() => setEmoji(id, em)}
-                    >
-                      {em}
-                    </button>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+        {orderedIds.length > 0 && visibleIds.length === 0 && (
+          <p className="text-xs text-muted-foreground px-2 py-4">
+            No pages match "{search}".
+          </p>
+        )}
 
-              {isRenaming ? (
-                <input
-                  autoFocus
-                  value={draftTitle}
-                  onChange={(e) => setDraftTitle(e.target.value)}
-                  onBlur={() => {
-                    renameDocument(id, draftTitle.trim() || 'Untitled');
-                    setRenamingId(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      renameDocument(id, draftTitle.trim() || 'Untitled');
-                      setRenamingId(null);
-                    }
-                    if (e.key === 'Escape') setRenamingId(null);
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex-1 min-w-0 bg-transparent outline-none border-b border-ring text-sm"
-                />
-              ) : (
-                <span className="flex-1 truncate">{doc.title || 'Untitled'}</span>
-              )}
+        {starredIds.length > 0 && (
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 pt-1 pb-1">
+            ⭐ Starred
+          </div>
+        )}
+        {starredIds.map((id) => renderSidebarRow(id))}
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <button
-                    type="button"
-                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-background"
-                    aria-label="Page options"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setRenamingId(id);
-                      setDraftTitle(doc.title);
-                    }}
-                  >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => duplicateDocument(id)}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Duplicate
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => {
-                      if (confirm(`Delete "${doc.title}"? This cannot be undone.`)) {
-                        deleteDocument(id);
-                      }
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          );
-        })}
+        {otherIds.length > 0 && starredIds.length > 0 && (
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 pt-2 pb-1">
+            All pages
+          </div>
+        )}
+        {otherIds.map((id) => renderSidebarRow(id))}
       </nav>
       <div className="px-3 py-2 border-t text-[11px] text-muted-foreground">
         {orderedIds.length} page{orderedIds.length === 1 ? '' : 's'}
@@ -348,7 +498,13 @@ function ImportItem() {
   );
 }
 
-function ExportMenu({ doc, editor }: { doc: Document | null; editor: TiptapEditor | null }) {
+function ExportMenu({
+  doc,
+  editor,
+}: {
+  doc: Document | null;
+  editor: TiptapEditor | null;
+}) {
   const exportMd = () => {
     if (!doc) return;
     const md = `# ${doc.title}\n\n${jsonToMarkdown(doc.content)}`;
@@ -376,6 +532,11 @@ function ExportMenu({ doc, editor }: { doc: Document | null; editor: TiptapEdito
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Export / Import</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => window.print()}>
+          <Printer className="mr-2 h-4 w-4" />
+          Print / PDF
+          <span className="ml-auto text-[10px] text-muted-foreground">⌘P</span>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={exportMd}>
           <FileDown className="mr-2 h-4 w-4" />
           Download .md
@@ -429,7 +590,9 @@ function Header({ editor }: { editor: TiptapEditor | null }) {
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        onBlur={() => activeDoc && renameDocument(activeDoc.id, title.trim() || 'Untitled')}
+        onBlur={() =>
+          activeDoc && renameDocument(activeDoc.id, title.trim() || 'Untitled')
+        }
         onKeyDown={(e) => {
           if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
         }}
@@ -584,6 +747,96 @@ function Toolbar({ editor }: { editor: TiptapEditor | null }) {
         <Quote className="h-4 w-4" />
       </button>
       <span className="mx-1 h-5 w-px bg-border" />
+      <button
+        className={btn(false)}
+        onClick={() =>
+          editor.chain().focus().sinkListItem('listItem').run() ||
+          editor.chain().focus().sinkListItem('taskItem').run()
+        }
+        title="Indent (Tab)"
+      >
+        <Indent className="h-4 w-4" />
+      </button>
+      <button
+        className={btn(false)}
+        onClick={() =>
+          editor.chain().focus().liftListItem('listItem').run() ||
+          editor.chain().focus().liftListItem('taskItem').run()
+        }
+        title="Outdent (⇧Tab)"
+      >
+        <Outdent className="h-4 w-4" />
+      </button>
+      <button
+        className={btn(false)}
+        onClick={() =>
+          editor.chain().focus().clearNodes().unsetAllMarks().run()
+        }
+        title="Clear formatting"
+      >
+        <Eraser className="h-4 w-4" />
+      </button>
+      <span className="mx-1 h-5 w-px bg-border" />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={btn(editor.isActive('highlight'))} title="Highlight color">
+            <Highlighter className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="grid grid-cols-3 gap-1 p-2 w-auto">
+          {HIGHLIGHT_COLORS.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              title={c.name}
+              onClick={() =>
+                editor.chain().focus().toggleHighlight({ color: c.value }).run()
+              }
+              className="h-7 w-7 rounded border hover:scale-110 transition"
+              style={{ background: c.value }}
+            />
+          ))}
+          <button
+            type="button"
+            title="Remove"
+            onClick={() => editor.chain().focus().unsetHighlight().run()}
+            className="h-7 w-7 rounded border bg-background flex items-center justify-center text-xs"
+          >
+            ✕
+          </button>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={btn(false)} title="Font family">
+            <span className="text-xs font-semibold">Aa</span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {FONT_FAMILIES.map((f) => (
+            <DropdownMenuItem
+              key={f.name}
+              onClick={() => {
+                if (!f.value) editor.chain().focus().unsetFontFamily().run();
+                else editor.chain().focus().setFontFamily(f.value).run();
+              }}
+            >
+              <span style={{ fontFamily: f.value || 'inherit' }}>{f.name}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <button
+        className={btn(false)}
+        onClick={() => {
+          const latex = window.prompt('LaTeX (e.g. E = mc^2)');
+          if (!latex) return;
+          editor.chain().focus().setBlockMath(latex).run();
+        }}
+        title="Math equation"
+      >
+        <Sigma className="h-4 w-4" />
+      </button>
       <input
         type="color"
         className="h-7 w-7 cursor-pointer rounded border bg-transparent"
@@ -606,9 +859,10 @@ function CreateThreadDialog({ editor }: { editor: TiptapEditor | null }) {
   const { setAlertOpen, setError } = useContext(GlobalContext);
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
-  const [pendingRange, setPendingRange] = useState<{ from: number; to: number } | null>(
-    null
-  );
+  const [pendingRange, setPendingRange] = useState<{
+    from: number;
+    to: number;
+  } | null>(null);
 
   const onOpen = () => {
     if (!editor) return;
@@ -649,7 +903,12 @@ function CreateThreadDialog({ editor }: { editor: TiptapEditor | null }) {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="gap-1 w-full" onClick={onOpen}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-1 w-full"
+        onClick={onOpen}
+      >
         <Plus className="h-3.5 w-3.5" />
         Add thread
       </Button>
@@ -700,7 +959,12 @@ function ThreadPanel({ editor }: { editor: TiptapEditor | null }) {
         /* range may be out of doc bounds; ignore */
       }
     }
-    setThreads(threads.map((x) => ({ ...x, expanded: x.id === id ? !x.expanded : false })));
+    setThreads(
+      threads.map((x) => ({
+        ...x,
+        expanded: x.id === id ? !x.expanded : false,
+      }))
+    );
   };
   const onResolve = (id: string, resolved: boolean) => {
     setThreads(threads.map((x) => (x.id === id ? { ...x, resolved } : x)));
@@ -792,9 +1056,14 @@ function ThreadCard({
           {formatDistanceToNow(new Date(thread.date), { addSuffix: true })}
         </span>
       </div>
-      <p className="text-xs mt-1 break-words whitespace-pre-wrap">{thread.description}</p>
+      <p className="text-xs mt-1 break-words whitespace-pre-wrap">
+        {thread.description}
+      </p>
       {thread.expanded && (
-        <div className="flex justify-end gap-1 mt-2" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="flex justify-end gap-1 mt-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           <Button
             size="sm"
             variant="ghost"
@@ -817,7 +1086,13 @@ function ThreadCard({
   );
 }
 
-function Outline({ editor, doc }: { editor: TiptapEditor | null; doc: Document | null }) {
+function Outline({
+  editor,
+  doc,
+}: {
+  editor: TiptapEditor | null;
+  doc: Document | null;
+}) {
   const headings = useMemo(() => (doc ? getHeadings(doc) : []), [doc]);
 
   const scrollTo = (index: number) => {
@@ -838,7 +1113,11 @@ function Outline({ editor, doc }: { editor: TiptapEditor | null; doc: Document |
   };
 
   if (headings.length === 0) {
-    return <p className="text-xs text-muted-foreground p-3">No headings in this page.</p>;
+    return (
+      <p className="text-xs text-muted-foreground p-3">
+        No headings in this page.
+      </p>
+    );
   }
 
   return (
@@ -926,6 +1205,14 @@ function StatusBar({ editor }: { editor: TiptapEditor | null }) {
     | undefined;
   const words = cc?.words?.() ?? 0;
   const chars = cc?.characters?.() ?? 0;
+  const readingMins = Math.max(1, Math.ceil(words / 200));
+
+  const { from, to } = editor.state.selection;
+  const selectedText = from === to ? '' : editor.state.doc.textBetween(from, to, ' ');
+  const selectedWords = selectedText.trim()
+    ? selectedText.trim().split(/\s+/).length
+    : 0;
+
   return (
     <div className="border-t bg-muted/30 px-4 py-1.5 text-[11px] text-muted-foreground flex items-center gap-4">
       <span>
@@ -934,6 +1221,14 @@ function StatusBar({ editor }: { editor: TiptapEditor | null }) {
       <span>
         {chars} char{chars === 1 ? '' : 's'}
       </span>
+      <span>
+        ~{readingMins} min read
+      </span>
+      {selectedWords > 0 && (
+        <span className="text-foreground">
+          Selected: {selectedWords} word{selectedWords === 1 ? '' : 's'}
+        </span>
+      )}
       <span className="ml-auto">Tiptap Editor</span>
     </div>
   );
@@ -945,7 +1240,15 @@ function EditorMenus({ editor }: { editor: TiptapEditor | null }) {
     <>
       <BubbleMenu
         editor={editor}
-        shouldShow={({ editor: ed, from, to }: { editor: TiptapEditor; from: number; to: number }) => {
+        shouldShow={({
+          editor: ed,
+          from,
+          to,
+        }: {
+          editor: TiptapEditor;
+          from: number;
+          to: number;
+        }) => {
           if (from === to) return false;
           if (ed.isActive('codeBlock') || ed.isActive('image')) return false;
           return true;
@@ -1018,14 +1321,21 @@ function EditorMenus({ editor }: { editor: TiptapEditor | null }) {
               editor.isActive('link') && 'bg-accent'
             )}
             onClick={() => {
-              const prev = editor.getAttributes('link').href as string | undefined;
+              const prev = editor.getAttributes('link').href as
+                | string
+                | undefined;
               const url = window.prompt('Link URL', prev ?? 'https://');
               if (url === null) return;
               if (url === '') {
                 editor.chain().focus().unsetLink().run();
                 return;
               }
-              editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+              editor
+                .chain()
+                .focus()
+                .extendMarkRange('link')
+                .setLink({ href: url })
+                .run();
             }}
             title="Link"
           >
@@ -1036,9 +1346,22 @@ function EditorMenus({ editor }: { editor: TiptapEditor | null }) {
 
       <FloatingMenu
         editor={editor}
-        shouldShow={({ state }: { state: { selection: { $from: { parent: { type: { name: string }; content: { size: number } } } } } }) => {
+        shouldShow={({
+          state,
+        }: {
+          state: {
+            selection: {
+              $from: {
+                parent: { type: { name: string }; content: { size: number } };
+              };
+            };
+          };
+        }) => {
           const { $from } = state.selection;
-          return $from.parent.type.name === 'paragraph' && $from.parent.content.size === 0;
+          return (
+            $from.parent.type.name === 'paragraph' &&
+            $from.parent.content.size === 0
+          );
         }}
       >
         <button
@@ -1057,6 +1380,37 @@ function EditorShell() {
   const { editor } = useContext(TiptapContext);
   const { alertOpen } = useContext(GlobalContext);
   const [collapsed, setCollapsed] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      if (key === 'k' && !e.shiftKey) {
+        // Avoid stealing ⌘K when the user is editing a link inside the editor.
+        const target = e.target as HTMLElement | null;
+        const inInput =
+          target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+        if (inInput) return;
+        e.preventDefault();
+        setPaletteOpen(true);
+      } else if (key === 'f' && !e.shiftKey) {
+        e.preventDefault();
+        setFindOpen(true);
+      } else if (key === 'h' && e.shiftKey) {
+        e.preventDefault();
+        setFindOpen(true);
+      } else if (key === '/') {
+        e.preventDefault();
+        setShortcutsOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
@@ -1064,7 +1418,7 @@ function EditorShell() {
       <main className="flex-1 flex flex-col min-w-0">
         <Header editor={editor} />
         <Toolbar editor={editor} />
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto" id="editor-print-root">
           <div className="mx-auto max-w-3xl">
             <EditorContent editor={editor} />
           </div>
@@ -1073,6 +1427,17 @@ function EditorShell() {
         <StatusBar editor={editor} />
       </main>
       <RightPanel editor={editor} />
+
+      <FindReplace editor={editor} open={findOpen} onClose={() => setFindOpen(false)} />
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        onToggleFind={() => setFindOpen(true)}
+        onToggleShortcuts={() => setShortcutsOpen(true)}
+        onPrint={() => window.print()}
+      />
+      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+
       {alertOpen && <AlertDestructive />}
     </div>
   );

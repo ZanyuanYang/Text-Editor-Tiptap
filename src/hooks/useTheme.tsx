@@ -9,7 +9,9 @@ function applyTheme(theme: Theme): void {
   } else if (theme === 'light') {
     root.classList.remove('dark');
   } else {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersDark = window.matchMedia(
+      '(prefers-color-scheme: dark)'
+    ).matches;
     root.classList.toggle('dark', prefersDark);
   }
 }
@@ -33,7 +35,9 @@ export function useTheme(): {
     setThemeState(t);
     saveTheme(t);
     applyTheme(t);
-    setResolved(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    setResolved(
+      document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    );
   }, []);
 
   useEffect(() => {
@@ -41,7 +45,9 @@ export function useTheme(): {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const onChange = () => {
       applyTheme('system');
-      setResolved(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+      setResolved(
+        document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+      );
     };
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);

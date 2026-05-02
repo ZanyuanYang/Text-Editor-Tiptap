@@ -2,7 +2,10 @@ import type { JSONContent } from '@tiptap/core';
 
 type MarkType = string;
 
-function applyMarks(text: string, marks?: { type: MarkType; attrs?: Record<string, unknown> }[]): string {
+function applyMarks(
+  text: string,
+  marks?: { type: MarkType; attrs?: Record<string, unknown> }[]
+): string {
   if (!marks?.length) return text;
   let out = text;
   for (const m of marks) {
@@ -43,26 +46,30 @@ function nodeToMd(node: JSONContent, depth = 0, listIndex = 0): string {
 
   switch (node.type) {
     case 'doc':
-      return (node.content ?? []).map((n) => nodeToMd(n)).join('\n\n').trim();
+      return (node.content ?? [])
+        .map((n) => nodeToMd(n))
+        .join('\n\n')
+        .trim();
 
     case 'paragraph':
       return (node.content ?? []).map((n) => nodeToMd(n)).join('');
 
     case 'text': {
-      const txt = (node.text ?? '');
+      const txt = node.text ?? '';
       return applyMarks(escapeText(txt), node.marks as never);
     }
 
     case 'heading': {
-      const level = Math.min(6, Math.max(1, (node.attrs?.level as number) ?? 1));
+      const level = Math.min(
+        6,
+        Math.max(1, (node.attrs?.level as number) ?? 1)
+      );
       const inner = (node.content ?? []).map((n) => nodeToMd(n)).join('');
       return `${'#'.repeat(level)} ${inner}`;
     }
 
     case 'bulletList': {
-      return (node.content ?? [])
-        .map((n) => nodeToMd(n, depth + 1))
-        .join('\n');
+      return (node.content ?? []).map((n) => nodeToMd(n, depth + 1)).join('\n');
     }
 
     case 'orderedList': {
@@ -105,7 +112,7 @@ function nodeToMd(node: JSONContent, depth = 0, listIndex = 0): string {
 
     case 'codeBlock': {
       const lang = (node.attrs?.language as string) || '';
-      const inner = (node.content ?? []).map((n) => (n.text ?? '')).join('');
+      const inner = (node.content ?? []).map((n) => n.text ?? '').join('');
       return `\`\`\`${lang}\n${inner}\n\`\`\``;
     }
 
@@ -132,7 +139,12 @@ function nodeToMd(node: JSONContent, depth = 0, listIndex = 0): string {
       const renderRow = (row: JSONContent) =>
         '| ' +
         (row.content ?? [])
-          .map((cell) => (cell.content ?? []).map((n) => nodeToMd(n)).join(' ').trim())
+          .map((cell) =>
+            (cell.content ?? [])
+              .map((n) => nodeToMd(n))
+              .join(' ')
+              .trim()
+          )
           .join(' | ') +
         ' |';
       const header = renderRow(rows[0]);
@@ -155,7 +167,11 @@ export function jsonToMarkdown(doc: JSONContent): string {
   return nodeToMd(doc).trim() + '\n';
 }
 
-export function downloadFile(filename: string, content: string, mime = 'text/plain'): void {
+export function downloadFile(
+  filename: string,
+  content: string,
+  mime = 'text/plain'
+): void {
   const blob = new Blob([content], { type: `${mime};charset=utf-8` });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

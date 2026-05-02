@@ -30,6 +30,7 @@ type DocumentsContextType = {
   deleteDocument: (id: string) => void;
   renameDocument: (id: string, title: string) => void;
   setEmoji: (id: string, emoji: string) => void;
+  toggleStar: (id: string) => void;
   setActive: (id: string) => void;
   updateContent: (id: string, content: Document['content']) => void;
   updateThreads: (id: string, threads: ThreadType[]) => void;
@@ -185,7 +186,9 @@ function DocumentsProvider({ children }: { children: React.ReactNode }) {
       });
       setActiveId((prev) => {
         if (prev !== id) return prev;
-        const remaining = Object.values(docsRef.current).filter((d) => d.id !== id);
+        const remaining = Object.values(docsRef.current).filter(
+          (d) => d.id !== id
+        );
         const fallback = remaining[0]?.id ?? null;
         if (fallback) saveActiveDocId(fallback);
         return fallback;
@@ -214,6 +217,23 @@ function DocumentsProvider({ children }: { children: React.ReactNode }) {
         return {
           ...prev,
           [id]: { ...prev[id], emoji, updatedAt: new Date().toISOString() },
+        };
+      });
+    },
+    [writeDocs]
+  );
+
+  const toggleStar = useCallback(
+    (id: string) => {
+      writeDocs((prev) => {
+        if (!prev[id]) return prev;
+        return {
+          ...prev,
+          [id]: {
+            ...prev[id],
+            starred: !prev[id].starred,
+            updatedAt: new Date().toISOString(),
+          },
         };
       });
     },
@@ -290,7 +310,7 @@ function DocumentsProvider({ children }: { children: React.ReactNode }) {
     [documents]
   );
 
-  const activeDoc = activeId ? documents[activeId] ?? null : null;
+  const activeDoc = activeId ? (documents[activeId] ?? null) : null;
 
   const value = useMemo<DocumentsContextType>(
     () => ({
@@ -305,6 +325,7 @@ function DocumentsProvider({ children }: { children: React.ReactNode }) {
       deleteDocument,
       renameDocument,
       setEmoji,
+      toggleStar,
       setActive,
       updateContent,
       updateThreads,
@@ -323,6 +344,7 @@ function DocumentsProvider({ children }: { children: React.ReactNode }) {
       deleteDocument,
       renameDocument,
       setEmoji,
+      toggleStar,
       setActive,
       updateContent,
       updateThreads,
@@ -332,13 +354,16 @@ function DocumentsProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <DocumentsContext.Provider value={value}>{children}</DocumentsContext.Provider>
+    <DocumentsContext.Provider value={value}>
+      {children}
+    </DocumentsContext.Provider>
   );
 }
 
 function useDocuments(): DocumentsContextType {
   const ctx = React.useContext(DocumentsContext);
-  if (!ctx) throw new Error('useDocuments must be used within DocumentsProvider');
+  if (!ctx)
+    throw new Error('useDocuments must be used within DocumentsProvider');
   return ctx;
 }
 

@@ -36,7 +36,12 @@ const ITEMS: SlashItem[] = [
     icon: 'H1',
     keywords: ['h1', 'title'],
     command: ({ editor, range }) =>
-      editor.chain().focus().deleteRange(range).setNode('heading', { level: 1 }).run(),
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .setNode('heading', { level: 1 })
+        .run(),
   },
   {
     title: 'Heading 2',
@@ -45,7 +50,12 @@ const ITEMS: SlashItem[] = [
     icon: 'H2',
     keywords: ['h2'],
     command: ({ editor, range }) =>
-      editor.chain().focus().deleteRange(range).setNode('heading', { level: 2 }).run(),
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .setNode('heading', { level: 2 })
+        .run(),
   },
   {
     title: 'Heading 3',
@@ -54,7 +64,12 @@ const ITEMS: SlashItem[] = [
     icon: 'H3',
     keywords: ['h3'],
     command: ({ editor, range }) =>
-      editor.chain().focus().deleteRange(range).setNode('heading', { level: 3 }).run(),
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .setNode('heading', { level: 3 })
+        .run(),
   },
   {
     title: 'Quote',
@@ -90,7 +105,13 @@ const ITEMS: SlashItem[] = [
     icon: '•',
     keywords: ['ul', 'unordered'],
     command: ({ editor, range }) =>
-      editor.chain().focus().deleteRange(range).toggleBulletList().run(),
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .clearNodes()
+        .toggleBulletList()
+        .run(),
   },
   {
     title: 'Numbered List',
@@ -99,7 +120,13 @@ const ITEMS: SlashItem[] = [
     icon: '1.',
     keywords: ['ol', 'ordered'],
     command: ({ editor, range }) =>
-      editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .clearNodes()
+        .toggleOrderedList()
+        .run(),
   },
   {
     title: 'To-do List',
@@ -108,7 +135,13 @@ const ITEMS: SlashItem[] = [
     icon: '☐',
     keywords: ['task', 'todo', 'check'],
     command: ({ editor, range }) =>
-      editor.chain().focus().deleteRange(range).toggleTaskList().run(),
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .clearNodes()
+        .toggleTaskList()
+        .run(),
   },
   {
     title: 'Image',
@@ -152,6 +185,18 @@ const ITEMS: SlashItem[] = [
         .deleteRange(range)
         .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
         .run(),
+  },
+  {
+    title: 'Math equation',
+    description: 'Block LaTeX formula',
+    group: 'Media',
+    icon: '∑',
+    keywords: ['math', 'latex', 'equation', 'tex', 'formula'],
+    command: ({ editor, range }) => {
+      const latex = window.prompt('LaTeX (e.g. E = mc^2)');
+      if (!latex) return;
+      editor.chain().focus().deleteRange(range).setBlockMath(latex).run();
+    },
   },
 ];
 
@@ -246,7 +291,9 @@ const SlashList = forwardRef<SlashListRef, SlashListProps>((props, ref) => {
                   {it.icon}
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-medium truncate">{it.title}</span>
+                  <span className="block text-sm font-medium truncate">
+                    {it.title}
+                  </span>
                   <span className="block text-xs text-muted-foreground truncate">
                     {it.description}
                   </span>

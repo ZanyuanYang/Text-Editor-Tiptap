@@ -45,10 +45,10 @@ export function saveActiveDocId(id: string): void {
 }
 
 export function loadTheme(): Theme {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'light';
   const v = localStorage.getItem(KEY_THEME);
   if (v === 'light' || v === 'dark' || v === 'system') return v;
-  return 'system';
+  return 'light';
 }
 
 export function saveTheme(theme: Theme): void {
