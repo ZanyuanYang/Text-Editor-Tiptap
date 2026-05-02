@@ -50,6 +50,8 @@ export const DocumentMention = Mention.configure({
             content: component.element,
             showOnCreate: true,
             interactive: true,
+            interactiveBorder: 20,
+            hideOnClick: false,
             trigger: 'manual',
             placement: 'bottom-start',
           });

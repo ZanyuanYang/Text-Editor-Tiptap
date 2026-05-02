@@ -1,4 +1,11 @@
-import { useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import type { Editor } from '@tiptap/react';
 import DragHandle from '@tiptap/extension-drag-handle-react';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
@@ -15,7 +22,18 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { HIGHLIGHT_COLORS, TEXT_COLORS } from './constants';
+import {
+  filterBlockItems,
+  groupBlockItems,
+  type BlockItem,
+} from './blockItems';
 
 type Current = { node: ProseMirrorNode | null; pos: number };
 
@@ -62,28 +80,173 @@ const TURN_INTO = [
   },
 ];
 
+function InsertBlockPopover({
+  editor,
+  current,
+}: {
+  editor: Editor;
+  current: Current;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(0);
+  // Snapshot of current node/pos at the moment the popover opens; while it's
+  // open the user may hover other blocks but we still want to insert relative
+  // to the block where they clicked +.
+  const anchor = useRef<Current | null>(null);
+
+  const items = useMemo(() => filterBlockItems(query), [query]);
+  const groups = useMemo(() => groupBlockItems(items), [items]);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery('');
+      setSelected(0);
+      anchor.current = null;
+    } else {
+      anchor.current = current;
+      setSelected(0);
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => setSelected(0), [query]);
+
+  const insert = (item: BlockItem) => {
+    const ctx = anchor.current ?? current;
+    if (ctx.node) {
+      const isEmptyParagraph =
+        ctx.node.type.name === 'paragraph' && ctx.node.content.size === 0;
+      if (isEmptyParagraph) {
+        const pos = ctx.pos + 1;
+        editor.chain().focus().setTextSelection(pos).run();
+        item.command({ editor, range: { from: pos, to: pos } });
+      } else {
+        const insertAt = ctx.pos + ctx.node.nodeSize;
+        editor
+          .chain()
+          .focus()
+          .insertContentAt(insertAt, { type: 'paragraph' })
+          .setTextSelection(insertAt + 1)
+          .run();
+        const newPos = insertAt + 1;
+        item.command({ editor, range: { from: newPos, to: newPos } });
+      }
+    } else {
+      const { from } = editor.state.selection;
+      item.command({ editor, range: { from, to: from } });
+    }
+    setOpen(false);
+  };
+
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelected((s) => (s + 1) % Math.max(1, items.length));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelected((s) => (s - 1 + items.length) % Math.max(1, items.length));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const it = items[selected];
+      if (it) insert(it);
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  const activeId = items[selected]?.title;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onMouseDown={(e) => e.stopPropagation()}
+          aria-label="Insert block"
+          title="Insert block"
+          className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        className="w-72 p-0"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="border-b px-2 py-1.5">
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder="Type to filter…"
+            className="w-full h-7 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+        <div className="max-h-80 overflow-auto p-1">
+          {items.length === 0 && (
+            <p className="text-sm text-muted-foreground p-3 text-center">
+              No matching blocks
+            </p>
+          )}
+          {Object.entries(groups).map(([group, groupItems]) => (
+            <div key={group}>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 pt-2 pb-1">
+                {group}
+              </div>
+              {groupItems.map((it) => (
+                <button
+                  key={it.title}
+                  type="button"
+                  onMouseEnter={() =>
+                    setSelected(items.findIndex((x) => x.title === it.title))
+                  }
+                  onClick={() => insert(it)}
+                  className={cn(
+                    'w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left',
+                    it.title === activeId && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded border bg-background text-xs font-mono">
+                    {it.icon}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-medium truncate">
+                      {it.title}
+                    </span>
+                    <span className="block text-xs text-muted-foreground truncate">
+                      {it.description}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="border-t px-2 py-1.5 text-[11px] text-muted-foreground flex items-center justify-between">
+          <span>↑↓ navigate · ↵ select</span>
+          <span>esc</span>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function BlockMenu({ editor }: { editor: Editor }) {
   const [current, setCurrent] = useState<Current>({ node: null, pos: 0 });
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const onNodeChange = useCallback(
+    ({ node, pos }: { node: ProseMirrorNode | null; pos: number }) =>
+      setCurrent({ node, pos }),
+    []
+  );
+
   const focusBlock = () => {
     if (!current.node) return;
     editor.chain().focus().setNodeSelection(current.pos).run();
-  };
-
-  const onPlus = () => {
-    if (!current.node) {
-      editor.chain().focus().insertContent('/').run();
-      return;
-    }
-    const insertAt = current.pos + current.node.nodeSize;
-    editor
-      .chain()
-      .focus()
-      .insertContentAt(insertAt, { type: 'paragraph' })
-      .setTextSelection(insertAt + 1)
-      .insertContent('/')
-      .run();
   };
 
   const turnInto = (run: (e: Editor) => void) => {
@@ -128,23 +291,44 @@ export function BlockMenu({ editor }: { editor: Editor }) {
     setMenuOpen(false);
   };
 
+  // Discriminate click vs drag on the grip handle: open the block menu only
+  // if pointerdown→pointerup happened with no real movement. Otherwise let
+  // the DragHandle library start its native drag.
+  const onGripPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    // Suppress Radix's default "open on pointerdown" behavior on the trigger.
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let dragged = false;
+    const onMove = (ev: PointerEvent) => {
+      if (
+        !dragged &&
+        Math.hypot(ev.clientX - startX, ev.clientY - startY) > 5
+      ) {
+        dragged = true;
+      }
+    };
+    const onUp = () => {
+      cleanup();
+      if (!dragged) setMenuOpen(true);
+    };
+    const onCancel = () => cleanup();
+    function cleanup() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      document.removeEventListener('dragend', onCancel);
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+    document.addEventListener('dragend', onCancel);
+  };
+
   return (
-    <DragHandle
-      editor={editor}
-      nested
-      onNodeChange={({ node, pos }) => setCurrent({ node, pos })}
-    >
-      <div className="flex items-center gap-0.5">
-        <button
-          type="button"
-          onClick={onPlus}
-          onMouseDown={(e) => e.stopPropagation()}
-          aria-label="Insert block below"
-          title="Click to add block below"
-          className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+    <DragHandle editor={editor} nested onNodeChange={onNodeChange}>
+      <div className="flex items-center gap-0.5 pt-1 leading-none">
+        <InsertBlockPopover editor={editor} current={current} />
 
         <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
@@ -152,6 +336,8 @@ export function BlockMenu({ editor }: { editor: Editor }) {
               type="button"
               aria-label="Block actions"
               title="Drag to move · Click to open menu"
+              onPointerDown={onGripPointerDown}
+              onClick={(e) => e.preventDefault()}
               className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground cursor-grab active:cursor-grabbing"
             >
               <GripVertical className="h-4 w-4" />

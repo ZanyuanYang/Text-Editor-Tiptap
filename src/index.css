@@ -325,6 +325,20 @@
   font-weight: 500;
 }
 
+/* Tippy popups (slash, mention) — let our shadcn content own the chrome. */
+.tippy-box {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+.tippy-box > .tippy-arrow {
+  display: none !important;
+}
+.tippy-box > .tippy-content {
+  padding: 0 !important;
+}
+
 /* Print: paper-like view. */
 @media print {
   body {
