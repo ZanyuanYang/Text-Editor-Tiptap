@@ -198,6 +198,47 @@ const ITEMS: SlashItem[] = [
       editor.chain().focus().deleteRange(range).setBlockMath(latex).run();
     },
   },
+  {
+    title: 'Today',
+    description: "Insert today's date",
+    group: 'Inline',
+    icon: '📅',
+    keywords: ['date', 'today'],
+    command: ({ editor, range }) => {
+      const text = new Date().toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+      editor.chain().focus().deleteRange(range).insertContent(text).run();
+    },
+  },
+  {
+    title: 'Now',
+    description: 'Insert current date and time',
+    group: 'Inline',
+    icon: '🕐',
+    keywords: ['time', 'now', 'date'],
+    command: ({ editor, range }) => {
+      const text = new Date().toLocaleString();
+      editor.chain().focus().deleteRange(range).insertContent(text).run();
+    },
+  },
+  {
+    title: 'Special character',
+    description: '© ™ ° ± ÷ × … →',
+    group: 'Inline',
+    icon: 'Ω',
+    keywords: ['symbol', 'special', 'unicode'],
+    command: ({ editor, range }) => {
+      const ch = window.prompt(
+        'Pick a character to insert',
+        '© ™ ® ° ± × ÷ … → ← ↑ ↓ ✓ ✗ ★ ♥ Ω π ∞'
+      );
+      if (!ch) return;
+      editor.chain().focus().deleteRange(range).insertContent(ch).run();
+    },
+  },
 ];
 
 function filterItems(query: string): SlashItem[] {

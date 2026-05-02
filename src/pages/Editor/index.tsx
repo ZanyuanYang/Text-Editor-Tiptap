@@ -88,9 +88,18 @@ const HIGHLIGHT_COLORS = [
 
 const FONT_FAMILIES = [
   { name: 'Default', value: '' },
-  { name: 'Sans-serif', value: 'ui-sans-serif, system-ui, -apple-system, sans-serif' },
-  { name: 'Serif', value: 'ui-serif, Georgia, Cambria, "Times New Roman", serif' },
-  { name: 'Mono', value: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' },
+  {
+    name: 'Sans-serif',
+    value: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
+  },
+  {
+    name: 'Serif',
+    value: 'ui-serif, Georgia, Cambria, "Times New Roman", serif',
+  },
+  {
+    name: 'Mono',
+    value: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+  },
 ];
 
 const COMMON_EMOJIS = [
@@ -281,10 +290,7 @@ function Sidebar({
               <MoreHorizontal className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem
               onClick={() => {
                 setRenamingId(id);
@@ -306,9 +312,7 @@ function Sidebar({
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={() => {
-                if (
-                  confirm(`Delete "${doc.title}"? This cannot be undone.`)
-                ) {
+                if (confirm(`Delete "${doc.title}"? This cannot be undone.`)) {
                   deleteDocument(id);
                 }
               }}
@@ -576,16 +580,45 @@ function SaveIndicator() {
   return null;
 }
 
-function Header({ editor }: { editor: TiptapEditor | null }) {
-  const { activeDoc, renameDocument } = useDocuments();
+function Header({
+  editor,
+  readOnly,
+  setReadOnly,
+  onOpenSidebar,
+}: {
+  editor: TiptapEditor | null;
+  readOnly: boolean;
+  setReadOnly: (v: boolean) => void;
+  onOpenSidebar: () => void;
+}) {
+  const { activeDoc, renameDocument, setCover } = useDocuments();
   const [title, setTitle] = useState(activeDoc?.title ?? '');
 
   useEffect(() => {
     setTitle(activeDoc?.title ?? '');
   }, [activeDoc?.id, activeDoc?.title]);
 
+  const onPickCover = () => {
+    if (!activeDoc) return;
+    const url = window.prompt(
+      'Cover image URL (Unsplash, etc.) — leave empty to remove',
+      activeDoc.coverUrl ?? ''
+    );
+    if (url === null) return;
+    setCover(activeDoc.id, url.trim() || null);
+  };
+
   return (
     <header className="flex items-center gap-3 px-4 py-2 border-b bg-background sticky top-0 z-10">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden h-8 w-8"
+        aria-label="Open sidebar"
+        onClick={onOpenSidebar}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
       <span className="text-base">{activeDoc?.emoji ?? '📝'}</span>
       <Input
         value={title}
@@ -597,10 +630,35 @@ function Header({ editor }: { editor: TiptapEditor | null }) {
           if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
         }}
         placeholder="Untitled"
-        className="h-8 max-w-md border-none shadow-none focus-visible:ring-0 px-1 text-base font-semibold"
+        readOnly={readOnly}
+        className="h-8 flex-1 min-w-0 max-w-md border-none shadow-none focus-visible:ring-0 px-1 text-base font-semibold"
       />
       <SaveIndicator />
       <div className="ml-auto flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden sm:inline-flex"
+          aria-label={activeDoc?.coverUrl ? 'Change cover' : 'Add cover'}
+          title={activeDoc?.coverUrl ? 'Change cover' : 'Add cover'}
+          onClick={onPickCover}
+        >
+          <FileUp className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={readOnly ? 'Switch to edit mode' : 'Switch to read-only'}
+          title={readOnly ? 'Edit' : 'Read-only'}
+          onClick={() => setReadOnly(!readOnly)}
+          className={cn(readOnly && 'bg-accent')}
+        >
+          {readOnly ? (
+            <Pencil className="h-4 w-4" />
+          ) : (
+            <Keyboard className="h-4 w-4" />
+          )}
+        </Button>
         <ExportMenu doc={activeDoc} editor={editor} />
         <ThemeToggle />
       </div>
@@ -779,11 +837,17 @@ function Toolbar({ editor }: { editor: TiptapEditor | null }) {
       <span className="mx-1 h-5 w-px bg-border" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className={btn(editor.isActive('highlight'))} title="Highlight color">
+          <button
+            className={btn(editor.isActive('highlight'))}
+            title="Highlight color"
+          >
             <Highlighter className="h-4 w-4" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="grid grid-cols-3 gap-1 p-2 w-auto">
+        <DropdownMenuContent
+          align="start"
+          className="grid grid-cols-3 gap-1 p-2 w-auto"
+        >
           {HIGHLIGHT_COLORS.map((c) => (
             <button
               key={c.value}
@@ -978,6 +1042,27 @@ function ThreadPanel({ editor }: { editor: TiptapEditor | null }) {
       ed.commands.unsetThreadById(id);
     }
   };
+  const onReply = (id: string, text: string) => {
+    if (!text.trim()) return;
+    setThreads(
+      threads.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              replies: [
+                ...(x.replies ?? []),
+                {
+                  id: `reply-${Date.now()}`,
+                  username: 'You',
+                  text: text.trim(),
+                  date: new Date().toISOString(),
+                },
+              ],
+            }
+          : x
+      )
+    );
+  };
 
   const open = threads.filter((t) => !t.resolved);
   const resolved = threads.filter((t) => t.resolved);
@@ -1003,6 +1088,7 @@ function ThreadPanel({ editor }: { editor: TiptapEditor | null }) {
             onClick={onClick}
             onResolve={onResolve}
             onDelete={onDelete}
+            onReply={onReply}
           />
         ))}
       </div>
@@ -1018,6 +1104,7 @@ function ThreadPanel({ editor }: { editor: TiptapEditor | null }) {
               onClick={onClick}
               onResolve={onResolve}
               onDelete={onDelete}
+              onReply={onReply}
             />
           ))}
         </div>
@@ -1031,12 +1118,16 @@ function ThreadCard({
   onClick,
   onResolve,
   onDelete,
+  onReply,
 }: {
   thread: ThreadType;
   onClick: (id: string) => void;
   onResolve: (id: string, r: boolean) => void;
   onDelete: (id: string) => void;
+  onReply: (id: string, text: string) => void;
 }) {
+  const [reply, setReply] = useState('');
+  const replies = thread.replies ?? [];
   return (
     <div
       role="button"
@@ -1059,27 +1150,69 @@ function ThreadCard({
       <p className="text-xs mt-1 break-words whitespace-pre-wrap">
         {thread.description}
       </p>
+
+      {(thread.expanded || replies.length > 0) && replies.length > 0 && (
+        <div className="mt-2 pl-2 border-l-2 border-border space-y-1.5">
+          {replies.map((r) => (
+            <div key={r.id} className="text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium">{r.username}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {formatDistanceToNow(new Date(r.date), { addSuffix: true })}
+                </span>
+              </div>
+              <p className="break-words whitespace-pre-wrap">{r.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {thread.expanded && (
-        <div
-          className="flex justify-end gap-1 mt-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 text-xs text-destructive hover:text-destructive"
-            onClick={() => onDelete(thread.id)}
-          >
-            Delete
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs"
-            onClick={() => onResolve(thread.id, !thread.resolved)}
-          >
-            {thread.resolved ? 'Reopen' : 'Resolve'}
-          </Button>
+        <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1">
+            <input
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              placeholder="Reply…"
+              className="flex-1 h-7 px-2 text-xs rounded-md border bg-background outline-none focus:ring-1 focus:ring-ring"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && reply.trim()) {
+                  onReply(thread.id, reply);
+                  setReply('');
+                }
+              }}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs px-2"
+              disabled={!reply.trim()}
+              onClick={() => {
+                onReply(thread.id, reply);
+                setReply('');
+              }}
+            >
+              Send
+            </Button>
+          </div>
+          <div className="flex justify-end gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs text-destructive hover:text-destructive"
+              onClick={() => onDelete(thread.id)}
+            >
+              Delete
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              onClick={() => onResolve(thread.id, !thread.resolved)}
+            >
+              {thread.resolved ? 'Reopen' : 'Resolve'}
+            </Button>
+          </div>
         </div>
       )}
     </div>
@@ -1208,7 +1341,8 @@ function StatusBar({ editor }: { editor: TiptapEditor | null }) {
   const readingMins = Math.max(1, Math.ceil(words / 200));
 
   const { from, to } = editor.state.selection;
-  const selectedText = from === to ? '' : editor.state.doc.textBetween(from, to, ' ');
+  const selectedText =
+    from === to ? '' : editor.state.doc.textBetween(from, to, ' ');
   const selectedWords = selectedText.trim()
     ? selectedText.trim().split(/\s+/).length
     : 0;
@@ -1221,9 +1355,7 @@ function StatusBar({ editor }: { editor: TiptapEditor | null }) {
       <span>
         {chars} char{chars === 1 ? '' : 's'}
       </span>
-      <span>
-        ~{readingMins} min read
-      </span>
+      <span>~{readingMins} min read</span>
       {selectedWords > 0 && (
         <span className="text-foreground">
           Selected: {selectedWords} word{selectedWords === 1 ? '' : 's'}
@@ -1378,11 +1510,19 @@ function EditorMenus({ editor }: { editor: TiptapEditor | null }) {
 
 function EditorShell() {
   const { editor } = useContext(TiptapContext);
+  const { activeDoc } = useDocuments();
   const { alertOpen } = useContext(GlobalContext);
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [readOnly, setReadOnly] = useState(false);
+
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(!readOnly);
+  }, [editor, readOnly]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1393,7 +1533,8 @@ function EditorShell() {
         // Avoid stealing ⌘K when the user is editing a link inside the editor.
         const target = e.target as HTMLElement | null;
         const inInput =
-          target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement;
         if (inInput) return;
         e.preventDefault();
         setPaletteOpen(true);
@@ -1414,11 +1555,47 @@ function EditorShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <div className="hidden md:flex">
+        <Sidebar
+          collapsed={collapsed}
+          onToggle={() => setCollapsed((c) => !c)}
+        />
+      </div>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 md:hidden bg-foreground/30"
+          onClick={() => setMobileOpen(false)}
+        >
+          <div
+            className="absolute inset-y-0 left-0 bg-background shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Sidebar collapsed={false} onToggle={() => setMobileOpen(false)} />
+          </div>
+        </div>
+      )}
       <main className="flex-1 flex flex-col min-w-0">
-        <Header editor={editor} />
-        <Toolbar editor={editor} />
+        <Header
+          editor={editor}
+          readOnly={readOnly}
+          setReadOnly={setReadOnly}
+          onOpenSidebar={() => setMobileOpen(true)}
+        />
+        {!readOnly && <Toolbar editor={editor} />}
         <div className="flex-1 overflow-auto" id="editor-print-root">
+          {activeDoc?.coverUrl && (
+            <div className="w-full h-44 sm:h-56 overflow-hidden">
+              <img
+                src={activeDoc.coverUrl}
+                alt=""
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget.parentElement as HTMLElement).style.display =
+                    'none';
+                }}
+              />
+            </div>
+          )}
           <div className="mx-auto max-w-3xl">
             <EditorContent editor={editor} />
           </div>
@@ -1428,7 +1605,11 @@ function EditorShell() {
       </main>
       <RightPanel editor={editor} />
 
-      <FindReplace editor={editor} open={findOpen} onClose={() => setFindOpen(false)} />
+      <FindReplace
+        editor={editor}
+        open={findOpen}
+        onClose={() => setFindOpen(false)}
+      />
       <CommandPalette
         open={paletteOpen}
         onOpenChange={setPaletteOpen}

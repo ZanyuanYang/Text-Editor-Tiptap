@@ -146,7 +146,9 @@ export function CommandPalette({
     }
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelected((s) => (s - 1 + filtered.length) % Math.max(1, filtered.length));
+      setSelected(
+        (s) => (s - 1 + filtered.length) % Math.max(1, filtered.length)
+      );
     }
     if (e.key === 'Enter') {
       e.preventDefault();

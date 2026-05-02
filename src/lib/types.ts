@@ -1,5 +1,12 @@
 import type { JSONContent } from '@tiptap/core';
 
+export type Reply = {
+  id: string;
+  username: string;
+  text: string;
+  date: string; // ISO 8601
+};
+
 export type ThreadType = {
   id: string;
   username: string;
@@ -9,6 +16,7 @@ export type ThreadType = {
   date: string; // ISO 8601
   // ProseMirror positions; persisted (DOM Range cannot be serialized).
   range?: { from: number; to: number };
+  replies?: Reply[];
 };
 
 export type Document = {
@@ -21,6 +29,7 @@ export type Document = {
   updatedAt: string; // ISO 8601
   order: number;
   starred?: boolean;
+  coverUrl?: string;
 };
 
 export type Theme = 'light' | 'dark' | 'system';

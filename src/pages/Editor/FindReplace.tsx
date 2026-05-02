@@ -11,7 +11,11 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function findMatches(editor: Editor, query: string, caseSensitive: boolean): Match[] {
+function findMatches(
+  editor: Editor,
+  query: string,
+  caseSensitive: boolean
+): Match[] {
   if (!query) return [];
   const matches: Match[] = [];
   const flags = caseSensitive ? 'g' : 'gi';
@@ -116,10 +120,22 @@ export function FindReplace({
             ? '0/0'
             : `${Math.min(activeIdx + 1, matches.length)}/${matches.length}`}
         </span>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={prev} aria-label="Previous">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={prev}
+          aria-label="Previous"
+        >
           <ChevronUp className="h-3.5 w-3.5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={next} aria-label="Next">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={next}
+          aria-label="Next"
+        >
           <ChevronDown className="h-3.5 w-3.5" />
         </Button>
         <button
@@ -133,7 +149,13 @@ export function FindReplace({
         >
           Aa
         </button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose} aria-label="Close">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={onClose}
+          aria-label="Close"
+        >
           <X className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -160,7 +182,12 @@ export function FindReplace({
               if (e.key === 'Escape') onClose();
             }}
           />
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={replaceOne}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs"
+            onClick={replaceOne}
+          >
             Replace
           </Button>
           <Button size="sm" className="h-7 text-xs" onClick={replaceAll}>

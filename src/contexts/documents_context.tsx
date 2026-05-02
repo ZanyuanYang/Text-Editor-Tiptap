@@ -30,6 +30,7 @@ type DocumentsContextType = {
   deleteDocument: (id: string) => void;
   renameDocument: (id: string, title: string) => void;
   setEmoji: (id: string, emoji: string) => void;
+  setCover: (id: string, coverUrl: string | null) => void;
   toggleStar: (id: string) => void;
   setActive: (id: string) => void;
   updateContent: (id: string, content: Document['content']) => void;
@@ -223,6 +224,19 @@ function DocumentsProvider({ children }: { children: React.ReactNode }) {
     [writeDocs]
   );
 
+  const setCover = useCallback(
+    (id: string, coverUrl: string | null) => {
+      writeDocs((prev) => {
+        if (!prev[id]) return prev;
+        const next = { ...prev[id], updatedAt: new Date().toISOString() };
+        if (coverUrl) next.coverUrl = coverUrl;
+        else delete next.coverUrl;
+        return { ...prev, [id]: next };
+      });
+    },
+    [writeDocs]
+  );
+
   const toggleStar = useCallback(
     (id: string) => {
       writeDocs((prev) => {
@@ -325,6 +339,7 @@ function DocumentsProvider({ children }: { children: React.ReactNode }) {
       deleteDocument,
       renameDocument,
       setEmoji,
+      setCover,
       toggleStar,
       setActive,
       updateContent,
@@ -344,6 +359,7 @@ function DocumentsProvider({ children }: { children: React.ReactNode }) {
       deleteDocument,
       renameDocument,
       setEmoji,
+      setCover,
       toggleStar,
       setActive,
       updateContent,
