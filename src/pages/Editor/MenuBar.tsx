@@ -142,7 +142,18 @@ export function MenuBar(props: Props) {
 
   if (!editor) return null;
 
-  const focus = () => editor.chain().focus();
+  const focus = (skipFix = false) => {
+    if (!skipFix) {
+      const { selection, doc } = editor.state;
+      if (!selection.empty && !('node' in selection)) {
+        const selectedText = doc.textBetween(selection.from, selection.to);
+        if (selectedText.length === 0) {
+          editor.commands.setTextSelection(selection.to);
+        }
+      }
+    }
+    return editor.chain().focus();
+  };
 
   const insertText = (text: string) => focus().insertContent(text).run();
   const insertParagraph = (text: string) =>
@@ -443,14 +454,14 @@ export function MenuBar(props: Props) {
           </MenubarTrigger>
           <MenubarContent>
             <MenubarItem
-              onClick={() => focus().undo().run()}
+              onClick={() => focus(true).undo().run()}
               disabled={!editor.can().undo()}
             >
               Undo
               <MenubarShortcut>⌘Z</MenubarShortcut>
             </MenubarItem>
             <MenubarItem
-              onClick={() => focus().redo().run()}
+              onClick={() => focus(true).redo().run()}
               disabled={!editor.can().redo()}
             >
               Redo

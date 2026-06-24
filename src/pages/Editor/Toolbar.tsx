@@ -50,11 +50,24 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
 
   if (!editor) return null;
 
+  const focus = (skipFix = false) => {
+    if (!skipFix) {
+      const { selection, doc } = editor.state;
+      if (!selection.empty && !('node' in selection)) {
+        const selectedText = doc.textBetween(selection.from, selection.to);
+        if (selectedText.length === 0) {
+          editor.commands.setTextSelection(selection.to);
+        }
+      }
+    } 
+    return editor.chain().focus();
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-1 px-4 py-1.5 border-b bg-background/60 backdrop-blur sticky top-[49px] z-10">
       <button
         className={btn(false)}
-        onClick={() => editor.chain().focus().undo().run()}
+        onClick={() => focus(true).undo().run()}
         disabled={!editor.can().undo()}
         title="Undo (⌘Z)"
       >
@@ -62,7 +75,7 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
       </button>
       <button
         className={btn(false)}
-        onClick={() => editor.chain().focus().redo().run()}
+        onClick={() => focus(true).redo().run()}
         disabled={!editor.can().redo()}
         title="Redo (⌘⇧Z)"
       >
@@ -72,42 +85,42 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
 
       <button
         className={btn(editor.isActive('bold'))}
-        onClick={() => editor.chain().focus().toggleBold().run()}
+        onClick={() => focus().toggleBold().run()}
         title="Bold (⌘B)"
       >
         <Bold className="h-4 w-4" />
       </button>
       <button
         className={btn(editor.isActive('italic'))}
-        onClick={() => editor.chain().focus().toggleItalic().run()}
+        onClick={() => focus().toggleItalic().run()}
         title="Italic (⌘I)"
       >
         <Italic className="h-4 w-4" />
       </button>
       <button
         className={btn(editor.isActive('underline'))}
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        onClick={() => focus().toggleUnderline().run()}
         title="Underline (⌘U)"
       >
         <UnderlineIcon className="h-4 w-4" />
       </button>
       <button
         className={btn(editor.isActive('strike'))}
-        onClick={() => editor.chain().focus().toggleStrike().run()}
+        onClick={() => focus().toggleStrike().run()}
         title="Strikethrough"
       >
         <Strikethrough className="h-4 w-4" />
       </button>
       <button
         className={btn(editor.isActive('code'))}
-        onClick={() => editor.chain().focus().toggleCode().run()}
+        onClick={() => focus().toggleCode().run()}
         title="Code"
       >
         <CodeIcon className="h-4 w-4" />
       </button>
       <button
         className={btn(editor.isActive('highlight'))}
-        onClick={() => editor.chain().focus().toggleHighlight().run()}
+        onClick={() => focus().toggleHighlight().run()}
         title="Highlight"
       >
         <Highlighter className="h-4 w-4" />
@@ -126,21 +139,21 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
       <span className="mx-1 h-5 w-px bg-border" />
       <button
         className={btn(editor.isActive('heading', { level: 1 }))}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        onClick={() => focus().toggleHeading({ level: 1 }).run()}
         title="Heading 1"
       >
         <span className="text-xs font-semibold">H1</span>
       </button>
       <button
         className={btn(editor.isActive('heading', { level: 2 }))}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        onClick={() => focus().toggleHeading({ level: 2 }).run()}
         title="Heading 2"
       >
         <span className="text-xs font-semibold">H2</span>
       </button>
       <button
         className={btn(editor.isActive('heading', { level: 3 }))}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        onClick={() => focus().toggleHeading({ level: 3 }).run()}
         title="Heading 3"
       >
         <span className="text-xs font-semibold">H3</span>
@@ -149,28 +162,28 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
       <span className="mx-1 h-5 w-px bg-border" />
       <button
         className={btn(editor.isActive('bulletList'))}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        onClick={() => focus().toggleBulletList().run()}
         title="Bullet list"
       >
         <ListIcon className="h-4 w-4" />
       </button>
       <button
         className={btn(editor.isActive('orderedList'))}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        onClick={() => focus().toggleOrderedList().run()}
         title="Numbered list"
       >
         <ListOrdered className="h-4 w-4" />
       </button>
       <button
         className={btn(editor.isActive('taskList'))}
-        onClick={() => editor.chain().focus().toggleTaskList().run()}
+        onClick={() => focus().toggleTaskList().run()}
         title="Task list"
       >
         <ListTodo className="h-4 w-4" />
       </button>
       <button
         className={btn(editor.isActive('blockquote'))}
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        onClick={() => focus().toggleBlockquote().run()}
         title="Quote"
       >
         <Quote className="h-4 w-4" />
@@ -180,8 +193,8 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
       <button
         className={btn(false)}
         onClick={() =>
-          editor.chain().focus().sinkListItem('listItem').run() ||
-          editor.chain().focus().sinkListItem('taskItem').run()
+          focus().sinkListItem('listItem').run() ||
+          focus().sinkListItem('taskItem').run()
         }
         title="Indent (Tab)"
       >
@@ -190,8 +203,8 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
       <button
         className={btn(false)}
         onClick={() =>
-          editor.chain().focus().liftListItem('listItem').run() ||
-          editor.chain().focus().liftListItem('taskItem').run()
+          focus().liftListItem('listItem').run() ||
+          focus().liftListItem('taskItem').run()
         }
         title="Outdent (⇧Tab)"
       >
@@ -200,7 +213,7 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
       <button
         className={btn(false)}
         onClick={() =>
-          editor.chain().focus().clearNodes().unsetAllMarks().run()
+          focus().clearNodes().unsetAllMarks().run()
         }
         title="Clear formatting"
       >
@@ -227,7 +240,7 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
               type="button"
               title={c.name}
               onClick={() =>
-                editor.chain().focus().toggleHighlight({ color: c.value }).run()
+                focus().toggleHighlight({ color: c.value }).run()
               }
               className="h-7 w-7 rounded border hover:scale-110 transition"
               style={{ background: c.value }}
@@ -236,7 +249,7 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
           <button
             type="button"
             title="Remove"
-            onClick={() => editor.chain().focus().unsetHighlight().run()}
+            onClick={() => focus().unsetHighlight().run()}
             className="h-7 w-7 rounded border bg-background flex items-center justify-center text-xs"
           >
             ✕
@@ -255,8 +268,8 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
             <DropdownMenuItem
               key={f.name}
               onClick={() => {
-                if (!f.value) editor.chain().focus().unsetFontFamily().run();
-                else editor.chain().focus().setFontFamily(f.value).run();
+                if (!f.value) focus().unsetFontFamily().run();
+                else focus().setFontFamily(f.value).run();
               }}
             >
               <span style={{ fontFamily: f.value || 'inherit' }}>{f.name}</span>
@@ -270,7 +283,7 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
         onClick={() => {
           const latex = window.prompt('LaTeX (e.g. E = mc^2)');
           if (!latex) return;
-          editor.chain().focus().setBlockMath(latex).run();
+          focus().setBlockMath(latex).run();
         }}
         title="Math equation"
       >
@@ -282,9 +295,7 @@ export function Toolbar({ editor }: { editor: TiptapEditor | null }) {
         className="h-7 w-7 cursor-pointer rounded border bg-transparent"
         title="Text color"
         onInput={(e) =>
-          editor
-            .chain()
-            .focus()
+          focus()
             .setColor((e.target as HTMLInputElement).value)
             .run()
         }
