@@ -1,3 +1,5 @@
+
+
 <div align="center">
 
 # Tiptap Editor
@@ -32,7 +34,7 @@ Built with [Tiptap](https://tiptap.dev), React 19, TailwindCSS and shadcn/ui —
 | 💾 **Local-first persistence** | Auto-saves every keystroke to `localStorage`. No accounts, no servers, no telemetry |
 | 🌓 **Dark / light / system theme** | Persisted across sessions, respects OS preference |
 | 🔍 **Find / Replace** | `⌘F` to find, `⌘⇧H` to replace, with case-sensitive toggle |
-| ⌘  **Command palette** | `⌘K` to jump between pages, create from templates, run actions |
+| ⌘ **Command palette** | `⌘K` to jump between pages, create from templates, run actions |
 | 🧵 **Inline threads (free!)** | Comment on selections with replies and resolve — works without Tiptap Pro/Cloud |
 | @ **Page mentions** | `@` to link to other pages with autocomplete |
 | 📐 **Outline panel** | Auto-generated table of contents that scrolls to headings |
